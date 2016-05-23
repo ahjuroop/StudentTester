@@ -111,8 +111,8 @@ public class Tests {
      * @return test results in JSON format
      */
     private JsonObject getTestResults(final boolean checkStyleEnabled, final boolean testNGEnabled) {
-        testFileWriter.close();
         studentCodeWriter.close();
+        testFileWriter.close();
         StudentTesterClass c = new StudentTesterClass(tempDirName + "test/", tempDirName + "source/");
         c.enableCheckstyle(checkStyleEnabled);
         c.enableTestNG(testNGEnabled);
@@ -127,11 +127,12 @@ public class Tests {
     @Test(description = "Check if a simple test can receive a result from a class.")
     public void testTrivial() {
         testFileWriter.write(String.format("import org.testng.annotations.Test;"
+        		+ "import org.testng.Assert;"
                 + "public class StudentReporterTest%1$s {"
                 +     "@Test\r\n"
                 +     "public void testSanity() {"
                 +         "StudentCode%1$s c = new StudentCode%1$s();"
-                +         "assert c.onePlusOne() == 2;"
+                +         "Assert.assertEquals(c.onePlusOne(), 2);"
                 +     "}"
                 + "}", testCounter));
         studentCodeWriter.write(String.format("public class StudentCode%1$s {"
@@ -194,12 +195,13 @@ public class Tests {
     @Test(description = "Create a muted test. Test names and scores should not be visible.")
     public void testMutedTest() {
         testFileWriter.write(String.format("import org.testng.annotations.Test;"
+        		+ "import org.testng.Assert;"
                 + "@GlobalConfiguration(mode = ReportMode.MUTED)\r\n"
                 + "public class StudentReporterTest%1$s {"
                 +     "@Test\r\n"
                 +     "public void testOnePlusOne() {"
                 +         "StudentCode%1$s c = new StudentCode%1$s();"
-                +         "assert c.onePlusOne() == 2;"
+                +         "Assert.assertEquals(c.onePlusOne(), 2);"
                 +     "}"
                 + "}", testCounter));
         studentCodeWriter.write(String.format("public class StudentCode%1$s {"
@@ -208,8 +210,8 @@ public class Tests {
                 +     "}"
                 + "}", testCounter));
         JsonObject results = getTestResults(false, true);
-        assert !results.getString("output").contains("testOnePlusOne");
-        assert !results.getString("output").contains("Final score");
+        Assert.assertFalse(results.getString("output").contains("testOnePlusOne"));
+        Assert.assertFalse(results.getString("output").contains("Final score"));
     }
 
     @Test(description = "Test weights with random numbers. Some tests fail, some do not. The grade must be correct.")
@@ -232,7 +234,7 @@ public class Tests {
             tests += (String.format("@Gradeable(weight = %1$s)\r\n"
                     +     "@Test\r\n"
                     +     "public void test%2$s() {"
-                    +         "assert %3$s;"
+                    +         "Assert.assertTrue(%3$s);"
                     +     "}", testWeights[i], i, testStatus[i]));
         }
 
@@ -242,6 +244,7 @@ public class Tests {
         double expectedGrade = (expectedPassed / expectedTotal) * 100;
 
         testFileWriter.write(String.format("import org.testng.annotations.Test;"
+        		+ "import org.testng.Assert;"
                 + "import studenttester.annotations.*;"
                 + "import studenttester.enums.*;"
                 + "@GlobalConfiguration(mode = ReportMode.MUTED)\r\n"
@@ -262,17 +265,18 @@ public class Tests {
         studentCodeWriter.write(String.format("public class StudentCode%1$s {"
                 + "}", testCounter));
         JsonObject results = getTestResults(false, false);
-        assert results.getString("output").contains("Nothing to run.");
+        Assert.assertTrue(results.getString("output").contains("Nothing to run."));
     }
 
     @Test(description = "Check if student's compilation error is displayed correctly.")
     public void testBrokenStudentCode() {
         testFileWriter.write(String.format("import org.testng.annotations.Test;"
+        		+ "import org.testng.Assert;"
                 + "public class StudentReporterTest%1$s {"
                 +     "@Test\r\n"
                 +     "public void testSanity() {"
                 +         "StudentCode%1$s c = new StudentCode%1$s();"
-                +         "assert c.onePlusOne() == 2;"
+                +         "Assert.assertEquals(c.onePlusOne(), 2);"
                 +     "}"
                 + "}", testCounter));
         studentCodeWriter.write(String.format("public class StudentCode%1$s {"
@@ -281,6 +285,6 @@ public class Tests {
                 +     "}"
                 + "}", testCounter));
         JsonObject results = getTestResults(false, true);
-        assert results.getString("output").contains("Error in StudentCode0.java: ';' expected");
+        Assert.assertTrue(results.getString("output").contains(String.format("Error in StudentCode%1$s.java: ';' expected", testCounter)));
     }
 }

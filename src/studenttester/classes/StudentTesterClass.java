@@ -83,6 +83,7 @@ public class StudentTesterClass {
             try {
                 for (File f: javaFiles) {
                     String content = new String(Files.readAllBytes(Paths.get(f.getAbsolutePath())), StandardCharsets.UTF_8);
+                    StudentHelperClass.log("Adding file " + f.getName() + " to output");
                     sourceList.add(Json.createObjectBuilder()
                             .add("path", f.getAbsolutePath())
                             .add("content", content));
@@ -91,7 +92,7 @@ public class StudentTesterClass {
                 StudentHelperClass.log(e.getMessage());
             } catch (IOException e) {
                 StudentHelperClass.log(e.getMessage());
-			}
+            }
 
             json.add("source", sourceList);
             json.add("extra", getCheckstyleXmlPath());

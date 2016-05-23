@@ -101,8 +101,9 @@ public final class StudentTesterMain {
      */
     private static String getUsage() {
         return "Usage:\n"
-             + "studentTester -testRoot [path] -contentRoot [path] -tempRoot [path] [options]\n"
+             + "StudentTester -testRoot [path] -contentRoot [path] [options]\n"
              + "\nOptions:\n"
+             + "-tempRoot [path]\tSets the path to the temporary directory, default is system's temp folder\n"
              + "-verbosity [level]\tSets the verbosity level, 10 is max, default is 0\n"
              + "-nocheckstyle\t\tdisables checkstyle, default is false\n"
              + "-notestng\t\tdisables TestNG, default is false\n"
@@ -111,7 +112,8 @@ public final class StudentTesterMain {
              + "-checkstylexml [path]\tSets the path to checkstyle XML file\n"
              + "-testngxml [path]\tSets the path to TestNG test configuration\n"
              + "\nNotes:\n"
-             + "By default XML files are used from testRoot directory.\n";
+             + "By default XML files are used from testRoot directory.\n"
+             + "For now, the paths must be absolute.\n";
     }
 
     /**
