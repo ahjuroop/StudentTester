@@ -120,7 +120,7 @@ public class StudentTesterClass {
                 List<File> toBeCompiled = new ArrayList<File>();
                 StudentHelperClass.populateFiles(tempDirectory, toBeCompiled);
                 // compile everything
-                Compiler compiler = new Compiler(toBeCompiled, tempDirectory, contentRoot);
+                Compiler compiler = new Compiler(toBeCompiled, contentRoot, tempDirectory);
                 if (compiler.run()) {
                     runTestNG();
                 }

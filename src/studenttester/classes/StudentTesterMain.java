@@ -13,7 +13,6 @@ public final class StudentTesterMain {
      * @param args - see usage javadoc
      */
     public static void main(String[] args) {
-
         StudentTesterClass c = new StudentTesterClass();
         if (args.length < 4) { //  minimal amount of correct arguments
             System.out.println(getUsage());
