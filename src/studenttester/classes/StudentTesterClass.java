@@ -5,13 +5,10 @@ import java.nio.file.Paths;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLClassLoader;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -19,7 +16,6 @@ import javax.json.Json;
 import javax.json.JsonArrayBuilder;
 import javax.json.JsonObjectBuilder;
 import org.testng.IReporter;
-import org.testng.TestListenerAdapter;
 import org.testng.TestNG;
 import org.testng.xml.XmlClass;
 import org.testng.xml.XmlSuite;
@@ -54,7 +50,8 @@ public class StudentTesterClass {
     contentRootName,                 // content root folder pathname
     tempDirectoryName,               // temp folder pathname
     checkstyleXmlPathName,           // checkstyle xml pathname
-    testNGXmlPathName;               // TestNG xml pathname
+    testNGXmlPathName,               // TestNG xml pathname
+    outputFilename;                  // if not null, output will be written here
 
     private File    testRoot,        // test root folder object
     contentRoot,                     // test root folder object
@@ -67,6 +64,9 @@ public class StudentTesterClass {
      * Runs the tester with current configuration.
      */
     public final void run() {
+
+	// start measuring time
+	long startTime = System.nanoTime();
 
 	// check if any necessary variables are missing
 	if (StudentHelperClass.checkAnyNull(testRoot, testRootName, tempDirectory,
@@ -148,13 +148,20 @@ public class StudentTesterClass {
 	    json.add("output", StudentHelperClass.getStdout().toString());
 	    json.add("results", singleResults);
 	    if (!quiet) {
-		System.out.println(json.build().toString());
+		if (outputFilename != null) {
+		    try (PrintWriter out = new PrintWriter(outputFilename)) {
+			out.println(json.build().toString());
+		    } catch (FileNotFoundException e) {
+			StudentHelperClass.log(e.getMessage());
+		    }
+		} else {
+		    System.out.println(json.build().toString());
+		}
 	    }
 	}
-
 	StudentHelperClass.deleteFolder(tempDirectory);
+	StudentHelperClass.log("Finished. Run time in ms: " + (System.nanoTime() - startTime) / 1000000);
     }
-
 
     /**
      * Runs TestNG.
@@ -191,8 +198,8 @@ public class StudentTesterClass {
 			    testngClasses.add(c);
 			}
 		    } catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			StudentHelperClass.log(e.toString());
+			StudentHelperClass.log("Skipping " + testClass);
 		    }
 		}
 		if (junitClasses.size() > 0) {
@@ -207,6 +214,9 @@ public class StudentTesterClass {
 		    XmlTest testTestng = new XmlTest(suite);
 		    testTestng.setName("TestNG tests");
 		    testTestng.setXmlClasses(testngClasses);
+		}
+		if ((testngClasses.size() + junitClasses.size()) == 0) {
+		    StudentHelperClass.log("Warning: nothing to test?");
 		}
 		suites.add(suite);
 		testng.setXmlSuites(suites);
@@ -255,6 +265,11 @@ public class StudentTesterClass {
 	} else {
 	    StudentHelperClass.log("Using default listener StudentReporter");
 	    testng.addListener(new StudentReporter());
+	}
+
+	// disable built-in listeners to reduce load
+	if (StudentHelperClass.getVerbosity() < 5) {
+	    testng.setUseDefaultListeners(false);
 	}
 
 	testng.run();
@@ -456,5 +471,13 @@ public class StudentTesterClass {
 	    return json.build().toString();
 	}
 	return null;
+    }
+
+    /**
+     * Sets the output file path.
+     * @param filename where the file will be written to
+     */
+    public final void setOutputFile(final String filename) {
+	this.outputFilename = filename;
     }
 }

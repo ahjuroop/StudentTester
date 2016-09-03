@@ -3,6 +3,8 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.testng.TestNG;
+
 /**
  *
  * @author Andres Antonen
@@ -45,6 +47,11 @@ public final class StudentTesterMain {
                 case "-temproot":
                     c.setTempDirectoryName(args[i + 1]);
                     i++;
+                    break;
+                case "-jsonfile":
+                    c.setOutputFile(args[i + 1]);
+                    i++;
+                    c.outputJSON(true);
                     break;
                 case "-verbosity":
                     try {
@@ -109,6 +116,7 @@ public final class StudentTesterMain {
              + "-nocheckstyle\t\tdisables checkstyle, default is false\n"
              + "-notestng\t\tdisables TestNG, default is false\n"
              + "-jsonoutput\t\tWrites results to JSON, default is false\n"
+             + "-jsonfile [path]\tWrites results to JSON file\n"
              + "-nomute\t\t\tWrites code output to stderr instead of discarding, default is false\n"
              + "-checkstylexml [path]\tSets the path to checkstyle XML file\n"
              + "-testngxml [path]\tSets the path to TestNG test configuration\n"
