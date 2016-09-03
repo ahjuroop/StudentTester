@@ -59,7 +59,6 @@ public class Checkstyle {
         }
         // capture checkstyle output to a variable
         ByteArrayOutputStream temp = StudentHelperClass.getNewStdoutObject();
-
         // disable System.exit() since Checkstyle likes to terminate the VM
         StudentHelperClass.disableSystemExit();
 
@@ -101,7 +100,7 @@ public class Checkstyle {
                     .add("code", JSON_CODE)
                     .add("name", JSON_FIELD_NAME));
         }
-
+        
         System.out.print(checkstyleResult);
     }
 }
