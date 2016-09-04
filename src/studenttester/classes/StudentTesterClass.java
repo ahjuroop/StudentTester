@@ -272,6 +272,8 @@ public class StudentTesterClass {
 	    testng.setUseDefaultListeners(false);
 	}
 
+	// redirect some debug messages to stderr
+	StudentHelperClass.stdoutToErr();
 	testng.run();
 
 	// pull results from the first IBaseStudentReporter

@@ -26,6 +26,6 @@ public class MuteListener implements ISuiteListener {
     @Override
     public final void onFinish(final ISuite suite) {
         StudentHelperClass.log(("Finished suite " + suite.getName() + ", unmuting output"));
-        StudentHelperClass.restoreStdOut();
+        StudentHelperClass.stdoutToErr();
     }
 }
