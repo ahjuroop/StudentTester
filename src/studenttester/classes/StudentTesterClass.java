@@ -165,7 +165,7 @@ public class StudentTesterClass {
 
 	// FIXME: for some reason, TestNG might not kill tests that timed out. As a workaround we'll kill the process
 	StudentHelperClass.enableSystemExit();
-	System.exit(0);
+	Runtime.getRuntime().halt(0);
     }
 
     /**

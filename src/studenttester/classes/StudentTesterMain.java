@@ -17,6 +17,7 @@ public final class StudentTesterMain {
      * @param args - see usage javadoc
      */
     public static void main(String[] args) {
+	args = "-testroot C:\\Users\\Andres\\workspace\\StudentTesterTest\\src\\testng\\src\\test\\java -contentroot C:\\Users\\Andres\\workspace\\StudentTesterTest\\src\\testng\\src\\main\\java -verbosity 10".split(" ");
         StudentTesterClass c = new StudentTesterClass();
         if (args.length < 4) { //  minimal amount of correct arguments
             System.out.println(getUsage());
