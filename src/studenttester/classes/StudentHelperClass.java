@@ -242,30 +242,38 @@ public final class StudentHelperClass {
     /**
      * Returns a list of java filenames found in a folder.
      * @param src - source folder
-     * @param testFilenames - java files
+     * @param filenames - java files
+     * @param includePaths - include relative paths to files
      */
-    public static void populateFilenames(final File src, final List<String> testFilenames) {
+    public static void populateFilenames(final File src, final List<String> filenames,
+	    final boolean includePaths) {
 	// Actually just a wrapper for the real function.
 	// We need to remember the original path so we can cut it out
-	populateFilenames(src, testFilenames, src.getAbsolutePath() + File.separator);
+	populateFilenames(src, filenames, src.getAbsolutePath() + File.separator, includePaths);
     }
 
     /**
      * Returns a list of java filenames found in a folder.
      * @param src - source folder
-     * @param testFileNames - java files
+     * @param filenames - java files
      * @param root - root path string
      */
-    private static void populateFilenames(final File src, final List<String> testFileNames, final String root) {
+    private static void populateFilenames(final File src, final List<String> filenames,
+	    final String root, final boolean includePaths) {
 	if (src.isDirectory()) {
 	    for (String file : src.list()) {
 		File srcFile = new File(src, file);
-		populateFilenames(srcFile, testFileNames, root);
+		populateFilenames(srcFile, filenames, root, includePaths);
 	    }
 	} else {
-	    String fileName = src.getAbsolutePath().replace(root, "");
-	    if (fileName.endsWith(".java")) {
-		testFileNames.add(fileName);
+	    String filename;
+	    if (includePaths) {
+		filename = src.getAbsolutePath().replace(root, "");
+	    } else {
+		filename = src.getName();
+	    }
+	    if (filename.endsWith(".java")) {
+		filenames.add(filename);
 	    }
 	}
     }

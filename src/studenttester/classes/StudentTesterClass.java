@@ -179,7 +179,7 @@ public class StudentTesterClass {
 
 		StudentHelperClass.log("No testng.xml found, running all test classes");
 		List<String> testFilenames = new ArrayList<String>();
-		StudentHelperClass.populateFilenames(testRoot, testFilenames);
+		StudentHelperClass.populateFilenames(testRoot, testFilenames, true);
 
 		List<XmlSuite> suites = new ArrayList<XmlSuite>();
 		XmlSuite suite = new XmlSuite();

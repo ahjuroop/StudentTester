@@ -90,7 +90,7 @@ public class Compiler {
     private void handleCompilationErrors(final List<Diagnostic<? extends JavaFileObject>> diagnostics) {
 
         List<String> testFileNames = new ArrayList<String>();
-        StudentHelperClass.populateFilenames(testRoot, testFileNames);    // get all test filenames
+        StudentHelperClass.populateFilenames(testRoot, testFileNames, false);    // get all test filenames
 
         String previousError = null;    // store previous error code to hide consecutive errors
         int sameErrorCounter = 0;        // amount of skipped errors
@@ -112,6 +112,7 @@ public class Compiler {
 
             // do not show code from test files
             if (testFileNames.contains(problematicFile)) {
+                StudentHelperClass.log(problematicFile + " is a test class, will not display the full error.");
                 System.out.println("Error in " + problematicFile + ": " + diagnostic.getMessage(null));
             } else {
                 System.out.format("Error on line %d in %s\n", diagnostic.getLineNumber(),
