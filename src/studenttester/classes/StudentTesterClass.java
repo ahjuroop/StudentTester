@@ -19,6 +19,7 @@ import org.testng.IReporter;
 import org.testng.TestNG;
 import org.testng.xml.XmlClass;
 import org.testng.xml.XmlSuite;
+import org.testng.xml.XmlSuite.ParallelMode;
 import org.testng.xml.XmlTest;
 
 import studenttester.dataclasses.SingleTest;
@@ -161,6 +162,10 @@ public class StudentTesterClass {
 	}
 	StudentHelperClass.deleteFolder(tempDirectory);
 	StudentHelperClass.log("Finished. Run time in ms: " + (System.nanoTime() - startTime) / 1000000);
+
+	// FIXME: for some reason, TestNG might not kill tests that timed out. As a workaround we'll kill the process
+	StudentHelperClass.enableSystemExit();
+	System.exit(0);
     }
 
     /**
@@ -218,6 +223,11 @@ public class StudentTesterClass {
 		if ((testngClasses.size() + junitClasses.size()) == 0) {
 		    StudentHelperClass.log("Warning: nothing to test?");
 		}
+
+		// run in parallel, maybe more efficient?
+		suite.setParallel(ParallelMode.METHODS);
+		suite.setThreadCount(4);
+
 		suites.add(suite);
 		testng.setXmlSuites(suites);
 	    } else {
