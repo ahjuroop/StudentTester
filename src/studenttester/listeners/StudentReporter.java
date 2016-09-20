@@ -171,13 +171,14 @@ public final class StudentReporter implements IReporter, IBaseStudentReporter {
             str += String.format("SUCCESS: %s\n\t%d msecs, unit test weight: %d units\n", test.getName(),
                     test.getEndMillis() - test.getStartMillis(), testMetadata.weight());
             if (reportMode == ReportMode.VERBOSE) {
-                str += String.format("\tDescription: %s\n", testMetadata.description());
+                // if no description, omit this line
+                str += (testMetadata.description() == null ? "" : String.format("\tDescription: %s\n", testMetadata.description()));
             }
             return str;
         case ITestResult.FAILURE:
             str += String.format("FAILURE: %s\n\t%d msecs, unit test weight: %d units\n", test.getName(),
                     test.getEndMillis() - test.getStartMillis(), testMetadata.weight());
-            str += String.format("\tDescription: %s\n", testMetadata.description());
+            str += (testMetadata.description() == null ? "" : String.format("\tDescription: %s\n", testMetadata.description()));
             str += String.format("\tException type: %s\n", test.getThrowable().getClass());
             if (testMetadata.printExceptionMessage() || reportMode == ReportMode.VERBOSE  || reportMode == ReportMode.MAXVERBOSE) {
                 str += String.format("\tDetailed information:  %s\n", test.getThrowable().getMessage());
@@ -191,7 +192,7 @@ public final class StudentReporter implements IReporter, IBaseStudentReporter {
             return str;
         case ITestResult.SKIP:
             str += String.format("SKIPPED: %s\n\tUnit test weight: %d units\n", test.getName(), testMetadata.weight());
-            str += String.format("\tDescription: %s\n", testMetadata.description());
+            str += (testMetadata.description() == null ? "" : String.format("\tDescription: %s\n", testMetadata.description()));
             str += String.format("\tTest skipped because:  %s\n", test.getThrowable().toString());
 
             if (test.getMethod().getGroupsDependedUpon().length > 0) {
@@ -265,7 +266,7 @@ public final class StudentReporter implements IReporter, IBaseStudentReporter {
 
             @Override
             public String description() {
-                return "No description";
+                return null;
             }
 
             @Override

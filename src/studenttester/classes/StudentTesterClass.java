@@ -164,7 +164,6 @@ public class StudentTesterClass {
 	StudentHelperClass.log("Finished. Run time in ms: " + (System.nanoTime() - startTime) / 1000000);
 
 	// FIXME: for some reason, TestNG might not kill tests that timed out. As a workaround we'll kill the process
-	StudentHelperClass.enableSystemExit();
 	Runtime.getRuntime().halt(0);
     }
 
@@ -225,8 +224,8 @@ public class StudentTesterClass {
 		}
 
 		// run in parallel, maybe more efficient?
-		suite.setParallel(ParallelMode.METHODS);
-		suite.setThreadCount(4);
+		/*suite.setParallel(ParallelMode.METHODS);
+		suite.setThreadCount(4);*/
 
 		suites.add(suite);
 		testng.setXmlSuites(suites);

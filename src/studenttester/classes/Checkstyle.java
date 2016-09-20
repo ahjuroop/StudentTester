@@ -70,6 +70,8 @@ public class Checkstyle {
         } catch (SecurityException e) {
             // checkstyle exit caught
             StudentHelperClass.log(e.getMessage());
+        } finally {
+            StudentHelperClass.enableSystemExit();
         }
         String checkstyleResult = temp.toString();
         // restore streams
