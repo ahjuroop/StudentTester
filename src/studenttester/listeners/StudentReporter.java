@@ -3,6 +3,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -32,6 +33,10 @@ public final class StudentReporter implements IReporter, IBaseStudentReporter {
      * Temporary data class for test results.
      */
     private TestResults results;
+    /**
+     * Stores assertion errors etc for including in diagnostic test results.
+     */
+    private List<String> failureReasons;
     /**
      * Verbosity settings for test class.
      */
@@ -77,15 +82,16 @@ public final class StudentReporter implements IReporter, IBaseStudentReporter {
 
                 double total = 0;
                 double passed = 0;
+                failureReasons = new ArrayList<String>(); // clear or initialize diagnostic array
 
                 for (ITestResult passedTest : tc.getPassedTests().getAllResults()) {
                     Gradeable testMetadata = getTestMetadata(passedTest);
                     if (testMetadata != null) {
-                        output += (getTestReport(passedTest, testMetadata));
+                        output += (getTestReportString(passedTest, testMetadata));
                         passed += testMetadata.weight();
                         total += testMetadata.weight();
                     } else {
-                        output += (getTestReport(passedTest, getMockAnnotation()));
+                        output += (getTestReportString(passedTest, getMockAnnotation()));
                         passed += getMockAnnotation().weight();
                         total += getMockAnnotation().weight();
                     }
@@ -93,20 +99,20 @@ public final class StudentReporter implements IReporter, IBaseStudentReporter {
                 for (ITestResult failedTest : tc.getFailedTests().getAllResults()) {
                     Gradeable testMetadata = getTestMetadata(failedTest);
                     if (testMetadata != null) {
-                        output += (getTestReport(failedTest, testMetadata));
+                        output += (getTestReportString(failedTest, testMetadata));
                         total += testMetadata.weight();
                     } else {
-                        output += (getTestReport(failedTest, getMockAnnotation()));
+                        output += (getTestReportString(failedTest, getMockAnnotation()));
                         total += getMockAnnotation().weight();
                     }
                 }
                 for (ITestResult skippedTest : tc.getSkippedTests().getAllResults()) {
                     Gradeable testMetadata = getTestMetadata(skippedTest);
                     if (testMetadata != null) {
-                        output += (getTestReport(skippedTest, testMetadata));
+                        output += (getTestReportString(skippedTest, testMetadata));
                         total += testMetadata.weight();
                     } else {
-                        output += (getTestReport(skippedTest, getMockAnnotation()));
+                        output += (getTestReportString(skippedTest, getMockAnnotation()));
                         total += getMockAnnotation().weight();
                     }
                 }
@@ -114,7 +120,7 @@ public final class StudentReporter implements IReporter, IBaseStudentReporter {
                 overallTotal += total;
                 overallPassed += passed;
 
-                // if no total
+                // if no total, avoid dividing by 0
                 if (total == 0) {
                     total = 1;
                 }
@@ -135,7 +141,7 @@ public final class StudentReporter implements IReporter, IBaseStudentReporter {
 
 
                 // add results to temp class
-                results.addTest(index, tc.getName(), (passed / total) * 100);
+                results.addTest(index, tc.getName(), (passed / total) * 100, String.join("\n", failureReasons));
                 index++;
             }
         }
@@ -148,7 +154,7 @@ public final class StudentReporter implements IReporter, IBaseStudentReporter {
             output += String.format("\nOverall grade: %.1f%%\n", (overallPassed / overallTotal) * 100);
         }
         // global results to object
-        results.setOutput(output);
+        results.setStudentOutput(output);
         results.setPercent((overallPassed / overallTotal) * 100);
     }
 
@@ -158,7 +164,7 @@ public final class StudentReporter implements IReporter, IBaseStudentReporter {
      * @param testMetadata - annotations
      * @return friendly string
      */
-    private String getTestReport(final ITestResult test, Gradeable testMetadata) {
+    private String getTestReportString(final ITestResult test, Gradeable testMetadata) {
         if (reportMode == ReportMode.MUTED || reportMode == ReportMode.ANONYMOUS) {
             return "";
         }
@@ -183,6 +189,7 @@ public final class StudentReporter implements IReporter, IBaseStudentReporter {
             if (testMetadata.printExceptionMessage() || reportMode == ReportMode.VERBOSE  || reportMode == ReportMode.MAXVERBOSE) {
                 str += String.format("\tDetailed information:  %s\n", test.getThrowable().getMessage());
             }
+            failureReasons.add(String.format("FAILURE: %s (%s)", test.getName(), test.getThrowable().toString()));
             if (testMetadata.printStackTrace() || reportMode == ReportMode.MAXVERBOSE) {
                 StringWriter sw = new StringWriter();
                 PrintWriter pw = new PrintWriter(sw);

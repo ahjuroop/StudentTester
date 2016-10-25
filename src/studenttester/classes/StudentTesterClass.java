@@ -296,7 +296,8 @@ public class StudentTesterClass {
 			singleResults.add(Json.createObjectBuilder()
 				.add("name", t.getName())
 				.add("code", t.getCode())
-				.add("percent", t.getPercent()));
+				.add("percent", t.getPercent())
+				.add("output", t.getOutput()));
 		    }
 		}
 		break;
