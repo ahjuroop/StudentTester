@@ -52,7 +52,8 @@ public class StudentTesterClass {
     tempDirectoryName,               // temp folder pathname
     checkstyleXmlPathName,           // checkstyle xml pathname
     testNGXmlPathName,               // TestNG xml pathname
-    outputFilename;                  // if not null, output will be written here
+    outputFilename,                  // if not null, output will be written here
+    compilerOptions;                 // string that is passed to the compiler
 
     private File    testRoot,        // test root folder object
     contentRoot,                     // test root folder object
@@ -128,7 +129,7 @@ public class StudentTesterClass {
 		List<File> toBeCompiled = new ArrayList<File>();
 		StudentHelperClass.populateFiles(tempDirectory, toBeCompiled);
 		// compile everything
-		Compiler compiler = new Compiler(toBeCompiled, tempDirectory, testRoot);
+		Compiler compiler = new Compiler(toBeCompiled, tempDirectory, testRoot, compilerOptions);
 		if (compiler.run()) {
 		    runTestNG();
 		}
@@ -491,5 +492,21 @@ public class StudentTesterClass {
      */
     public final void setOutputFile(final String filename) {
 	this.outputFilename = filename;
+    }
+
+    /**
+     * Sets the compiler options.
+     * @param options - information to be passed to the compiler
+     */
+    public final void setCompilerOptions(String options) {
+    	this.compilerOptions = options;
+    }
+
+    /**
+     * Gets the compiler options.
+     * @return information to be passed to the compiler
+     */
+    public final String getCompilerOptions() {
+    	return this.compilerOptions;
     }
 }

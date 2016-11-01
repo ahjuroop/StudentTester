@@ -1,10 +1,13 @@
 package studenttester.classes;
 
 import java.io.File;
+import java.io.StringWriter;
+import java.io.Writer;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import javax.tools.Diagnostic;
@@ -23,17 +26,24 @@ public class Compiler {
 
     private List<File> toBeCompiled;
     private File tempDirectory, testRoot;
+    private List<String> options = null;
+    Writer compilerWriter;
 
     /**
      * Creates a new compiler object.
      * @param toBeCompiled - files to compile
      * @param tempDirectory - folder to be put into classpath after compilation
      * @param testRoot - folder containing tests
+     * @param compilerOptions 
      */
-    public Compiler(final List<File> toBeCompiled, final File tempDirectory, final File testRoot) {
+    public Compiler(final List<File> toBeCompiled, final File tempDirectory,
+    		final File testRoot, String compilerOptions) {
         this.toBeCompiled = toBeCompiled;
         this.tempDirectory = tempDirectory;
         this.testRoot = testRoot;
+        if (compilerOptions != null) {
+        	this.options = Arrays.asList(compilerOptions.split(" "));
+        }
     }
 
     /**
@@ -44,25 +54,37 @@ public class Compiler {
         try {
             JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
             if (compiler == null) {
-                throw new UnsupportedOperationException("Compiler is null, is jdk used?");
+                throw new StudentTesterException("Compiler object is null, is jdk used?");
+            }
+            if (toBeCompiled.size() == 0) {
+            	throw new StudentTesterException("Nothing to compile.");
             }
             StandardJavaFileManager fileManager = compiler.getStandardFileManager(null, null, null);
             DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<JavaFileObject>();
-
+            compilerWriter = new StringWriter(); // compilation output
             Iterable<? extends JavaFileObject> compilationUnits = fileManager.getJavaFileObjectsFromFiles(toBeCompiled);
-            compiler.getTask(null, fileManager, diagnostics, null, null, compilationUnits).call();
+            StudentHelperClass.log("Beginning compilation, " + toBeCompiled.size() + " files in queue");
+            if (options != null && options.size() > 0) {
+            	StudentHelperClass.log("Compiler options: " + options);
+            } else {
+            	StudentHelperClass.log("No compiler options specified");
+            }
+            boolean compileSuccess = compiler.getTask(compilerWriter, fileManager, diagnostics, options, null, compilationUnits).call();
+            StudentHelperClass.log(compileSuccess? "Compilation appears to have succeeded" : "Compilation failed");
             fileManager.close();
-
-            // workaround to put the temporary folder to classpath
-            URL url = tempDirectory.toURI().toURL();
-            URLClassLoader urlClassLoader = (URLClassLoader) ClassLoader.getSystemClassLoader();
-            Class<?> urlClass = URLClassLoader.class;
-            Method method = urlClass.getDeclaredMethod("addURL", new Class[] {URL.class});
-            method.setAccessible(true);
-            method.invoke(urlClassLoader, new Object[]{url});
-
+            
+            if (compileSuccess) {
+	            // workaround to put the temporary folder to classpath
+	            URL url = tempDirectory.toURI().toURL();
+	            URLClassLoader urlClassLoader = (URLClassLoader) ClassLoader.getSystemClassLoader();
+	            Class<?> urlClass = URLClassLoader.class;
+	            Method method = urlClass.getDeclaredMethod("addURL", new Class[] {URL.class});
+	            method.setAccessible(true);
+	            method.invoke(urlClassLoader, new Object[]{url});
+            }
+            
             // compilation errors were found
-            if (diagnostics.getDiagnostics().size() > 0) {
+            if (!compileSuccess || diagnostics.getDiagnostics().size() > 0) {
                 System.out.println("Compilation failed, cannot continue.");
                 handleCompilationErrors(diagnostics.getDiagnostics());
                 return false;
@@ -78,6 +100,8 @@ public class Compiler {
             StudentHelperClass.restoreStdOut();
             System.out.println("Testing failed, cannot continue.");
             StudentHelperClass.log(e.toString());
+        } finally {
+            StudentHelperClass.log(compilerWriter.toString());
         }
         return false;
     }

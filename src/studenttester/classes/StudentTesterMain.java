@@ -90,6 +90,10 @@ public final class StudentTesterMain {
                         System.err.println("Could not find TestNG xml: " + args[i + 1]);
                     }
                     break;
+                case "-javacoptions":
+                	c.setCompilerOptions(args[i + 1]);
+                    i++;
+                    break;
                 default:
                     System.err.println("Unknown argument: " + args[i]);
                     System.err.println(getUsage());
@@ -120,6 +124,8 @@ public final class StudentTesterMain {
              + "-nomute\t\t\tWrites code output to stderr instead of discarding, default is false\n"
              + "-checkstylexml [path]\tSets the path to checkstyle XML file\n"
              + "-testngxml [path]\tSets the path to TestNG test configuration\n"
+             + "-javacoptions [options]\tPasses additional flags to the compiler; multiple flags should be\n"
+             + "separated with spaces and quoted, e.g -javacoptions \"-Xlint:cast -Xlint:deprecation\""
              + "\nNotes:\n"
              + "By default XML files are used from testRoot directory.\n"
              + "For now, the paths must be absolute.\n";

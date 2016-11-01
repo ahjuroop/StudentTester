@@ -134,9 +134,9 @@ public final class StudentHelperClass {
     public static void disableSystemExit() {
 	final SecurityManager securityManager = new SecurityManager() {
 	    public void checkPermission(final Permission permission) {
-		if (permission.getName() != null && permission.getName().contains("exitVM")) {
-		    throw new SecurityException("exitVM call caught.");
-		}
+			if (permission.getName() != null && permission.getName().contains("exitVM")) {
+			    throw new SecurityException("exitVM call caught.");
+			}
 	    }
 	};
 	System.setSecurityManager(securityManager);
