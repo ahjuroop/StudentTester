@@ -1,0 +1,23 @@
+<!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd" >
+
+<suite name="StudentTester Example">
+
+	<test name="JUnit test example" junit="true">
+		<classes>
+			<class name="testcode.JUnitTest" />
+		</classes>
+	</test>
+
+	<test name="TestNG test example">
+		<classes>
+			<class name="testcode.TestNGTest1" />
+		</classes>
+	</test>
+
+	<test name="TestNG test example muted">
+		<classes>
+			<class name="testcode.TestNGTest2" />
+		</classes>
+	</test>
+
+</suite>

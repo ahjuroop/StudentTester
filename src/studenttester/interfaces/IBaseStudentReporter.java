@@ -9,10 +9,10 @@ import studenttester.dataclasses.TestResults;
  *
  */
 public interface IBaseStudentReporter {
-    /**
-     * Public method for getting data from the reporter.
-     * @return test results in TestResults format.
-     */
-    TestResults getResults();
+	/**
+	 * Public method for getting data from the reporter.
+	 * @return test results in TestResults format.
+	 */
+	TestResults getResults();
 
 }

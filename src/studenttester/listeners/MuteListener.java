@@ -11,21 +11,21 @@ import studenttester.classes.StudentHelperClass;
  */
 public class MuteListener implements ISuiteListener {
 
-    /**
-     * Mute before running suite.
-     */
-    @Override
-    public final void onStart(final ISuite suite) {
-        StudentHelperClass.log(("Starting suite " + suite.getName() + ", muting output"));
-        StudentHelperClass.muteStdOut();
-    }
+	/**
+	 * Mute before running suite.
+	 */
+	@Override
+	public final void onStart(final ISuite suite) {
+		StudentHelperClass.log(("Starting suite " + suite.getName() + ", muting output"));
+		StudentHelperClass.muteStdOut();
+	}
 
-    /**
-     * Unmute after running suite.
-     */
-    @Override
-    public final void onFinish(final ISuite suite) {
-        StudentHelperClass.log(("Finished suite " + suite.getName() + ", unmuting output"));
-        StudentHelperClass.stdoutToErr();
-    }
+	/**
+	 * Unmute after running suite.
+	 */
+	@Override
+	public final void onFinish(final ISuite suite) {
+		StudentHelperClass.log(("Finished suite " + suite.getName() + ", unmuting output"));
+		StudentHelperClass.stdoutToErr();
+	}
 }

@@ -35,478 +35,492 @@ import studenttester.listeners.StudentReporter;
  */
 public class StudentTesterClass {
 
-    /**
-     * Default checkstyle rules for fallback.
-     */
-    private static final String DEFAULT_CHECKSTYLE_RULES = "/sun_checks.xml";
+	/**
+	 * Default checkstyle rules for fallback.
+	 */
+	private static final String DEFAULT_CHECKSTYLE_RULES = "/sun_checks.xml";
 
-    private boolean checkstyleEnabled = true,// is checkstyle used
-	    testNGEnabled = true,            // is TestNG used
-	    customCheckstyleSet = false,     // is custom checkstyle xml set
-	    jsonOutput = false,              // print output to JSON instead
-	    muteCodeOutput = true,           // mute code output
-	    quiet = false;                   // print nothing to stdout if json enabled
+	private boolean checkstyleEnabled = true,// is checkstyle used
+			testNGEnabled = true,            // is TestNG used
+			customCheckstyleSet = false,     // is custom checkstyle xml set
+			jsonOutput = false,              // print output to JSON instead
+			muteCodeOutput = true,           // mute code output
+			quiet = false;                   // print nothing to stdout if json enabled
 
-    private String testRootName,             // test root folder pathname
-    contentRootName,                 // content root folder pathname
-    tempDirectoryName,               // temp folder pathname
-    checkstyleXmlPathName,           // checkstyle xml pathname
-    testNGXmlPathName,               // TestNG xml pathname
-    outputFilename,                  // if not null, output will be written here
-    compilerOptions;                 // string that is passed to the compiler
+	private String testRootName,             // test root folder pathname
+	contentRootName,                 // content root folder pathname
+	tempDirectoryName,               // temp folder pathname
+	checkstyleXmlPathName,           // checkstyle xml pathname
+	testNGXmlPathName,               // TestNG xml pathname
+	outputFilename,                  // if not null, output will be written here
+	compilerOptions;                 // string that is passed to the compiler
 
-    private File    testRoot,        // test root folder object
-    contentRoot,                     // test root folder object
-    tempDirectory;                   // temp folder object
+	private File    testRoot,        // test root folder object
+	contentRoot,                     // test root folder object
+	tempDirectory;                   // temp folder object
 
-    private JsonObjectBuilder json;                  // object holding json data
-    private JsonArrayBuilder singleResults;          // object holding json data for separate tests
+	private JsonObjectBuilder json;                  // object holding json data
+	private JsonArrayBuilder singleResults;          // object holding json data for separate tests
 
-    /**
-     * Runs the tester with current configuration.
-     */
-    public final void run() {
+	/**
+	 * Runs the tester with current configuration.
+	 */
+	public final void run() {
 
-	// start measuring time
-	long startTime = System.nanoTime();
+		// start measuring time
+		long startTime = System.nanoTime();
 
-	// check if any necessary variables are missing
-	if (StudentHelperClass.checkAnyNull(testRoot, testRootName, tempDirectory,
-		tempDirectoryName, contentRoot, contentRootName)) {
-	    StudentHelperClass.log("One or more necessary directories are missing");
-	    if (jsonOutput) {
-		System.out.print("{\"output\": \"Internal error, testing cannot continue.\"}");
-	    }
-	    return;
-	}
-
-	// prepare json object if enabled, copy file contents to json
-	if (jsonOutput) {
-
-	    json = Json.createObjectBuilder();
-	    JsonArrayBuilder sourceList = Json.createArrayBuilder();
-	    singleResults = Json.createArrayBuilder();
-	    List<File> javaFiles = new ArrayList<File>();
-	    StudentHelperClass.populateFiles(contentRoot, javaFiles);
-
-	    try {
-		for (File f: javaFiles) {
-		    String content = new String(Files.readAllBytes(Paths.get(f.getAbsolutePath())), StandardCharsets.UTF_8);
-		    StudentHelperClass.log("Adding file " + f.getName() + " to output");
-		    sourceList.add(Json.createObjectBuilder()
-			    .add("path", f.getAbsolutePath())
-			    .add("content", content));
-		}
-	    } catch (FileNotFoundException e) {
-		StudentHelperClass.log(e.getMessage());
-	    } catch (IOException e) {
-		StudentHelperClass.log(e.getMessage());
-	    }
-
-	    json.add("source", sourceList);
-	    json.add("extra", getCheckstyleXmlPath());
-
-	    // begin redirecting stdout to a variable so it can be included in json later
-	    StudentHelperClass.redirectStdOut();
-	}
-
-	System.out.println("TEST RESULTS\n");
-
-	// run checkstyle
-	if (checkstyleEnabled) {
-	    Checkstyle checkstyle = new Checkstyle(getCheckstyleXmlPath(), contentRoot, jsonOutput, singleResults);
-	    checkstyle.run();
-	}
-
-	System.out.print("\n\n");
-
-	// run TestNG
-	if (testNGEnabled) {
-	    try {
-		StudentHelperClass.deleteFolder(tempDirectory);
-		StudentHelperClass.copyFolder(contentRoot, tempDirectory);
-		StudentHelperClass.copyFolder(testRoot, tempDirectory);
-		List<File> toBeCompiled = new ArrayList<File>();
-		StudentHelperClass.populateFiles(tempDirectory, toBeCompiled);
-		// compile everything
-		Compiler compiler = new Compiler(toBeCompiled, tempDirectory, testRoot, compilerOptions);
-		if (compiler.run()) {
-		    runTestNG();
-		}
-	    } catch (Exception e) {
-		StudentHelperClass.log(e.toString());
-		System.out.println("Internal error, cannot continue.");
-	    }
-
-	}
-
-	if (!testNGEnabled && !checkstyleEnabled) {
-	    System.out.println("Nothing to run.");
-	}
-
-	StudentHelperClass.restoreStdOut();
-	// print out json results
-	if (jsonOutput) {
-	    json.add("output", StudentHelperClass.getStdout().toString());
-	    json.add("results", singleResults);
-	    if (!quiet) {
-		if (outputFilename != null) {
-		    try (PrintWriter out = new PrintWriter(outputFilename)) {
-			out.println(json.build().toString());
-		    } catch (FileNotFoundException e) {
-			StudentHelperClass.log(e.getMessage());
-		    }
-		} else {
-		    System.out.println(json.build().toString());
-		}
-	    }
-	}
-	StudentHelperClass.deleteFolder(tempDirectory);
-	StudentHelperClass.log("Finished. Run time in ms: " + (System.nanoTime() - startTime) / 1000000);
-
-	// FIXME: for some reason, TestNG might not kill tests that timed out. As a workaround we'll kill the process
-	Runtime.getRuntime().halt(0);
-    }
-
-    /**
-     * Runs TestNG.
-     */
-    private void runTestNG() {
-	TestNG testng = new TestNG();
-
-	// search for TestNG xml file
-	if (testNGXmlPathName == null) {
-	    // attempt to use default path
-	    File f = new File(tempDirectory.getPath() + "/testng.xml");
-	    if (!f.exists() || f.isDirectory()) {
-
-		// here be dragons
-
-		StudentHelperClass.log("No testng.xml found, running all test classes");
-		List<String> testFilenames = new ArrayList<String>();
-		StudentHelperClass.populateFilenames(testRoot, testFilenames, true);
-
-		List<XmlSuite> suites = new ArrayList<XmlSuite>();
-		XmlSuite suite = new XmlSuite();
-		suite.setName("Autogenerated Test Suite");
-
-		List<XmlClass> junitClasses = new ArrayList<XmlClass>();
-		List<XmlClass> testngClasses = new ArrayList<XmlClass>();
-		for (String testClass : testFilenames) {
-		    XmlClass c = new XmlClass(StudentHelperClass.filePathToClassPath(testClass));
-		    try {
-			if (StudentHelperClass.isJUnitClass(new File(testRoot, testClass))) {
-			    StudentHelperClass.log(String.format("Found JUnit class %s", testClass));
-			    junitClasses.add(c);
-			} else {
-			    StudentHelperClass.log(String.format("Found TestNG class %s", testClass));
-			    testngClasses.add(c);
+		// check if any necessary variables are missing
+		if (StudentHelperClass.checkAnyNull(testRoot, testRootName, tempDirectory,
+				tempDirectoryName, contentRoot, contentRootName)) {
+			StudentHelperClass.log("One or more necessary directories are missing");
+			if (jsonOutput) {
+				System.out.print("{\"output\": \"Internal error, testing cannot continue.\"}");
 			}
-		    } catch (IOException e) {
-			StudentHelperClass.log(e.toString());
-			StudentHelperClass.log("Skipping " + testClass);
-		    }
-		}
-		if (junitClasses.size() > 0) {
-		    // create test for JUnit
-		    XmlTest testJunit = new XmlTest(suite);
-		    testJunit.setJUnit(true);
-		    testJunit.setName("JUnit tests");
-		    testJunit.setXmlClasses(junitClasses);
-		}
-		if (testngClasses.size() > 0) {
-		    // and for TestNG
-		    XmlTest testTestng = new XmlTest(suite);
-		    testTestng.setName("TestNG tests");
-		    testTestng.setXmlClasses(testngClasses);
-		}
-		if ((testngClasses.size() + junitClasses.size()) == 0) {
-		    StudentHelperClass.log("Warning: nothing to test?");
+			return;
 		}
 
-		// run in parallel, maybe more efficient?
-		/*suite.setParallel(ParallelMode.METHODS);
-		suite.setThreadCount(4);*/
+		// prepare json object if enabled, copy file contents to json
+		if (jsonOutput) {
 
-		suites.add(suite);
-		testng.setXmlSuites(suites);
-	    } else {
-		testNGXmlPathName = tempDirectory.getPath() + "/testng.xml";
-		testng.setTestSuites(Arrays.asList(new String[] {testNGXmlPathName}));
-	    }
+			json = Json.createObjectBuilder();
+			JsonArrayBuilder sourceList = Json.createArrayBuilder();
+			singleResults = Json.createArrayBuilder();
+			List<File> javaFiles = new ArrayList<File>();
+			StudentHelperClass.populateFiles(contentRoot, javaFiles);
 
+			try {
+				for (File f: javaFiles) {
+					String content = new String(Files.readAllBytes(Paths.get(f.getAbsolutePath())), StandardCharsets.UTF_8);
+					StudentHelperClass.log("Adding file " + f.getName() + " to output");
+					sourceList.add(Json.createObjectBuilder()
+							.add("path", f.getAbsolutePath())
+							.add("content", content));
+				}
+			} catch (FileNotFoundException e) {
+				StudentHelperClass.log(e.getMessage());
+			} catch (IOException e) {
+				StudentHelperClass.log(e.getMessage());
+			}
 
-	} else {
-	    testng.setTestSuites(Arrays.asList(new String[] {testNGXmlPathName}));
-	}
+			json.add("source", sourceList);
+			json.add("extra", getCheckstyleXmlPath());
 
-
-	// set TestNG verbosity. TestNG is supposed to have 10 levels.
-	testng.setVerbose(StudentHelperClass.getVerbosity());
-
-	// mute output while testing, this should be kept on
-	if (muteCodeOutput) {
-	    testng.addListener(new MuteListener());
-	} else {
-	    StudentHelperClass.stdoutToErr();
-	}
-
-	// TestNG does not appear to have an interface to examine xml contents.
-	// Attempt to parse xml manually to find custom listeners
-	// If the listener is not a reporter, you have to add it as well
-	String customListener = null;
-	if (testNGXmlPathName != null) {
-	    try {
-		String xmlData = new String(Files.readAllBytes(Paths.get(testNGXmlPathName)), StandardCharsets.UTF_8);
-		Pattern LISTENER_PATTERN = Pattern.compile("listener\\s?class-name\\s?=\\s?\"(\\w+)\"");
-		Matcher m = LISTENER_PATTERN.matcher(xmlData);
-		while (m.find()) {
-		    customListener = m.group(1);
+			// begin redirecting stdout to a variable so it can be included in json later
+			StudentHelperClass.redirectStdOut();
 		}
-	    } catch (FileNotFoundException e1) {
-		StudentHelperClass.log("testNGXml file has unexpectedly disappeared");
-	    } catch (Exception e) {
-		StudentHelperClass.log(e.getMessage());
-	    }
-	}
 
-	if (customListener != null) {
-	    StudentHelperClass.log("Using listener " + customListener);
-	} else {
-	    StudentHelperClass.log("Using default listener StudentReporter");
-	    testng.addListener(new StudentReporter());
-	}
+		System.out.println("TEST RESULTS\n");
 
-	// disable built-in listeners to reduce load
-	if (StudentHelperClass.getVerbosity() < 5) {
-	    testng.setUseDefaultListeners(false);
-	}
-
-	// redirect some debug messages to stderr
-	StudentHelperClass.stdoutToErr();
-	testng.run();
-
-	// pull results from the first IBaseStudentReporter
-	TestResults results = null;
-	for (IReporter reporter : testng.getReporters()) {
-	    if (reporter instanceof IBaseStudentReporter) {
-		results = ((IBaseStudentReporter) reporter).getResults();
-		if (jsonOutput && results != null) {
-		    json.add("percent", results.getPercent());
-		    for (SingleTest t : results.getResultList()) {
-			singleResults.add(Json.createObjectBuilder()
-				.add("name", t.getName())
-				.add("code", t.getCode())
-				.add("percent", t.getPercent())
-				.add("output", t.getOutput()));
-		    }
+		// run checkstyle
+		if (checkstyleEnabled) {
+			Checkstyle checkstyle = new Checkstyle(getCheckstyleXmlPath(), contentRoot, jsonOutput, singleResults);
+			checkstyle.run();
 		}
-		break;
-	    }
+
+		System.out.print("\n\n");
+
+		// run TestNG
+		if (testNGEnabled) {
+			try {
+				StudentHelperClass.deleteFolder(tempDirectory);
+				StudentHelperClass.copyFolder(contentRoot, tempDirectory);
+				StudentHelperClass.copyFolder(testRoot, tempDirectory);
+				List<File> toBeCompiled = new ArrayList<File>();
+				StudentHelperClass.populateFiles(tempDirectory, toBeCompiled);
+				// compile everything
+				Compiler compiler = new Compiler(toBeCompiled, tempDirectory, testRoot, compilerOptions);
+				if (compiler.run()) {
+					runTestNG();
+				}
+			} catch (NoClassDefFoundError e) {
+				StudentHelperClass.log(e.toString());
+				System.out.println("Could not run one or more classes. "
+						+ "Please check if the folder structure matches package definitions.");
+			} catch (Exception e) {
+				StudentHelperClass.log(e.toString());
+				System.out.println("Internal error, cannot continue.");
+			}
+		}
+
+		if (!testNGEnabled && !checkstyleEnabled) {
+			System.out.println("Nothing to run.");
+		}
+
+		StudentHelperClass.restoreStdOut();
+		// print out json results
+		if (jsonOutput) {
+			json.add("output", StudentHelperClass.getStdout().toString());
+			json.add("results", singleResults);
+			if (!quiet) {
+				if (outputFilename != null) {
+					try (PrintWriter out = new PrintWriter(outputFilename)) {
+						out.println(json.build().toString());
+					} catch (FileNotFoundException e) {
+						StudentHelperClass.log(e.getMessage());
+					}
+				} else {
+					System.out.println(json.build().toString());
+				}
+			}
+		}
+		StudentHelperClass.deleteFolder(tempDirectory);
+		StudentHelperClass.log("Finished. Run time in ms: " + (System.nanoTime() - startTime) / 1000000);
+
+		// FIXME: for some reason, TestNG might not kill tests that timed out. As a workaround we'll kill the process
+		//Runtime.getRuntime().halt(0);
 	}
 
-	if (!jsonOutput) {
-	    // restore output if no json
-	    StudentHelperClass.restoreStdOut();
-	} else {
-	    // redirect output to variable again if json
-	    StudentHelperClass.redirectStdOut();
+	/**
+	 * Runs TestNG.
+	 * @throws Exception if TestNG fails
+	 */
+	@SuppressWarnings("deprecation")
+	private void runTestNG() throws Exception {
+		TestNG testng = new TestNG();
+
+		// search for TestNG xml file
+		if (testNGXmlPathName == null) {
+			// attempt to use default path
+			File f = new File(tempDirectory.getPath() + "/testng.xml");
+			if (!f.exists() || f.isDirectory()) {
+
+				// here be dragons
+
+				StudentHelperClass.log("No testng.xml found, running all test classes");
+				List<String> testFilenames = new ArrayList<String>();
+				StudentHelperClass.populateFilenames(testRoot, testFilenames, true);
+
+				List<XmlSuite> suites = new ArrayList<XmlSuite>();
+				XmlSuite suite = new XmlSuite();
+				suite.setName("Autogenerated Test Suite");
+
+				List<XmlClass> junitClasses = new ArrayList<XmlClass>();
+				List<XmlClass> testngClasses = new ArrayList<XmlClass>();
+				for (String testClass : testFilenames) {
+					XmlClass c = new XmlClass(StudentHelperClass.filePathToClassPath(testClass));
+					try {
+						if (StudentHelperClass.isJUnitClass(new File(testRoot, testClass))) {
+							StudentHelperClass.log(String.format("Found JUnit class %s", testClass));
+							junitClasses.add(c);
+						} else {
+							StudentHelperClass.log(String.format("Found TestNG class %s", testClass));
+							testngClasses.add(c);
+						}
+					} catch (IOException e) {
+						StudentHelperClass.log(e.toString());
+						StudentHelperClass.log("Skipping " + testClass);
+					}
+				}
+				if (junitClasses.size() > 0) {
+					// create test for JUnit
+					XmlTest testJunit = new XmlTest(suite);
+					testJunit.setJUnit(true);
+					testJunit.setName("JUnit tests");
+					testJunit.setXmlClasses(junitClasses);
+				}
+				if (testngClasses.size() > 0) {
+					// and for TestNG
+					XmlTest testTestng = new XmlTest(suite);
+					testTestng.setName("TestNG tests");
+					testTestng.setXmlClasses(testngClasses);
+				}
+				if ((testngClasses.size() + junitClasses.size()) == 0) {
+					StudentHelperClass.log("Warning: nothing to test?");
+				}
+
+				// run in parallel, maybe more efficient?
+				suite.setParallel(ParallelMode.METHODS);
+				suite.setThreadCount(4);
+				suites.add(suite);
+				testng.setXmlSuites(suites);
+			} else {
+				testNGXmlPathName = tempDirectory.getPath() + "/testng.xml";
+				testng.setTestSuites(Arrays.asList(new String[] {testNGXmlPathName}));
+			}
+		} else {
+			testng.setTestSuites(Arrays.asList(new String[] {testNGXmlPathName}));
+		}
+
+		// set TestNG verbosity. TestNG is supposed to have 10 levels.
+		testng.setVerbose(StudentHelperClass.getVerbosity());
+
+		// mute output while testing, this should be kept on
+		if (muteCodeOutput) {
+			testng.addListener(new MuteListener());
+		} else {
+			StudentHelperClass.stdoutToErr();
+		}
+
+		// TestNG does not appear to have an interface to examine xml contents.
+		// Attempt to parse xml manually to find custom listeners
+		// If the listener is not a reporter, you have to add it as well
+		String customListener = null;
+		if (testNGXmlPathName != null) {
+			try {
+				String xmlData = new String(Files.readAllBytes(Paths.get(testNGXmlPathName)), StandardCharsets.UTF_8);
+				Pattern LISTENER_PATTERN = Pattern.compile("listener\\s?class-name\\s?=\\s?\"(\\w+)\"");
+				Matcher m = LISTENER_PATTERN.matcher(xmlData);
+				while (m.find()) {
+					customListener = m.group(1);
+				}
+			} catch (FileNotFoundException e1) {
+				StudentHelperClass.log("testNGXml file has unexpectedly disappeared");
+				throw e1;
+			}
+		}
+
+		if (customListener != null) {
+			StudentHelperClass.log("Using listener " + customListener);
+		} else {
+			StudentHelperClass.log("Using default listener StudentReporter");
+			// deprecated, see http://testng.org/doc/documentation-main.html#listeners-testng-xml
+			// for now it's still the best way to configure programmatically
+			testng.addListener(new StudentReporter());
+		}
+
+		// disable built-in listeners to reduce load
+		if (StudentHelperClass.getVerbosity() < 5) {
+			testng.setUseDefaultListeners(false);
+		}
+
+		// redirect some debug messages to stderr
+		StudentHelperClass.stdoutToErr();
+
+		// run TestNG. If an exception is thrown, restore streams.
+		Exception tempEx = null;
+		try {
+			testng.run();
+		} catch (Exception e) {
+			tempEx = e;
+		} finally {
+			if (!jsonOutput) {
+				// restore output if no json
+				StudentHelperClass.restoreStdOut();
+			} else {
+				// redirect output to variable again if json
+				StudentHelperClass.redirectStdOut();
+			}
+			if (tempEx != null) {
+				throw tempEx;
+			}
+		}
+
+		// pull results from the first IBaseStudentReporter
+		TestResults results = null;
+		for (IReporter reporter : testng.getReporters()) {
+			if (reporter instanceof IBaseStudentReporter) {
+				results = ((IBaseStudentReporter) reporter).getResults();
+				if (jsonOutput && results != null) {
+					json.add("percent", results.getPercent());
+					for (SingleTest t : results.getResultList()) {
+						singleResults.add(Json.createObjectBuilder()
+								.add("name", t.getName())
+								.add("code", t.getCode())
+								.add("percent", t.getPercent())
+								.add("output", t.getOutput()));
+					}
+				}
+				break;
+			}
+		}
+
+		try {
+			System.out.print(results.getOutput());
+		} catch (Exception e) {
+			System.out.println("Error getting test results.");
+			StudentHelperClass.log("Result object was null, are reporters ok?");
+			throw e;
+		}
 	}
-	try {
-	    System.out.print(results.getOutput());
-	} catch (Exception e) {
-	    System.out.println("Error getting test results.");
-	    StudentHelperClass.log("Result object was null, are reporters ok?");
+
+	/**
+	 * Constructor.
+	 */
+	public StudentTesterClass() {
+		StudentHelperClass.clearRedirectedStdOut(); // delete data from previous session
+		// try to automatically get temp directory
+		this.tempDirectoryName = System.getProperty("java.io.tmpdir");
+		if (tempDirectoryName != null) {
+			this.tempDirectory = new File(tempDirectoryName + "/testerTemp/");
+		}
 	}
-    }
 
-    /**
-     * Constructor.
-     */
-    public StudentTesterClass() {
-	StudentHelperClass.clearRedirectedStdOut(); // delete data from previous session
-	// try to automatically get temp directory
-	this.tempDirectoryName = System.getProperty("java.io.tmpdir");
-	if (tempDirectoryName != null) {
-	    this.tempDirectory = new File(tempDirectoryName + "/testerTemp/");
+	/**
+	 * Creates a tester with minimal arguments.
+	 * @param testRootName - test root folder
+	 * @param contentRootName - student code folder
+	 */
+	public StudentTesterClass(final String testRootName, final String contentRootName) {
+		StudentHelperClass.clearRedirectedStdOut(); // delete data from previous session
+		// try to automatically get temp directory
+		this.testRootName = testRootName;
+		this.contentRootName = contentRootName;
+		this.tempDirectoryName = System.getProperty("java.io.tmpdir");
+		if (tempDirectoryName != null) {
+			this.tempDirectory = new File(tempDirectoryName + "/testerTemp/");
+		}
+		this.testRoot = new File(testRootName);
+		this.contentRoot = new File(contentRootName);
 	}
-    }
 
-    /**
-     * Creates a tester with minimal arguments.
-     * @param testRootName - test root folder
-     * @param contentRootName - student code folder
-     */
-    public StudentTesterClass(final String testRootName, final String contentRootName) {
-	StudentHelperClass.clearRedirectedStdOut(); // delete data from previous session
-	// try to automatically get temp directory
-	this.testRootName = testRootName;
-	this.contentRootName = contentRootName;
-	this.tempDirectoryName = System.getProperty("java.io.tmpdir");
-	if (tempDirectoryName != null) {
-	    this.tempDirectory = new File(tempDirectoryName + "/testerTemp/");
+	/**
+	 * Enables or disables checkstyle.
+	 * @param value - disable if false
+	 */
+	public final void enableCheckstyle(final boolean value) {
+		this.checkstyleEnabled = value;
 	}
-	this.testRoot = new File(testRootName);
-	this.contentRoot = new File(contentRootName);
-    }
 
-    /**
-     * Enables or disables checkstyle.
-     * @param value - disable if false
-     */
-    public final void enableCheckstyle(final boolean value) {
-	this.checkstyleEnabled = value;
-    }
-
-    /**
-     * Enables or disables TestNG.
-     * @param value - disable if false
-     */
-    public final void enableTestNG(final boolean value) {
-	this.testNGEnabled = value;
-    }
-
-    /**
-     * Returns a path to checkstyle rules whether one is set or not.
-     * @return current valid checkstyle path
-     */
-    private String getCheckstyleXmlPath() {
-	if (customCheckstyleSet) {
-	    return checkstyleXmlPathName;
-	} else {
-	    File xml = new File(testRoot.getPath() + "/checkstyle.xml");
-	    if (xml.exists() && xml.isFile()) {
-		return xml.getPath();
-	    }
-	    StudentHelperClass.log("Checkstyle XML not found in root, falling back to default rules");
+	/**
+	 * Enables or disables TestNG.
+	 * @param value - disable if false
+	 */
+	public final void enableTestNG(final boolean value) {
+		this.testNGEnabled = value;
 	}
-	return DEFAULT_CHECKSTYLE_RULES;
-    }
 
-    /**
-     * Sets the checkstyle xml file, if the path is correct.
-     * @param xmlPath - path to xml
-     */
-    public final void setCheckstyleXml(final String xmlPath) {
-	File xml = new File(xmlPath);
-	if (xml.exists() && !xml.isDirectory()) {
-	    this.checkstyleXmlPathName = xmlPath;
-	    customCheckstyleSet = true;
-	    StudentHelperClass.log("Checkstyle XML set successfully");
-	} else {
-	    StudentHelperClass.log("Checkstyle XML not found");
+	/**
+	 * Returns a path to checkstyle rules whether one is set or not.
+	 * @return current valid checkstyle path
+	 */
+	private String getCheckstyleXmlPath() {
+		if (customCheckstyleSet) {
+			return checkstyleXmlPathName;
+		} else {
+			File xml = new File(testRoot.getPath() + "/checkstyle.xml");
+			if (xml.exists() && xml.isFile()) {
+				return xml.getPath();
+			}
+			StudentHelperClass.log("Checkstyle XML not found in root, falling back to default rules");
+		}
+		return DEFAULT_CHECKSTYLE_RULES;
 	}
-    }
 
-    /**
-     * Sets the content root filename.
-     * @param contentRootName - path to content root
-     */
-    public final void setContentRootName(final String contentRootName) {
-	this.contentRootName = contentRootName;
-	this.contentRoot = new File(contentRootName);
-    }
-
-    /**
-     * Sets the temporary folder name.
-     * @param tempDirectoryName - path to temp folder
-     */
-    public final void setTempDirectoryName(final String tempDirectoryName) {
-	this.tempDirectoryName = tempDirectoryName;
-	this.tempDirectory = new File(tempDirectoryName);
-    }
-
-    /**
-     * Sets the TestNG xml file, if the path is correct.
-     * @param xmlPath - path to xml
-     */
-    public final void setTestNGXml(final String xmlPath) {
-	File xml = new File(xmlPath);
-	if (xml.exists() && !xml.isDirectory()) {
-	    this.testNGXmlPathName = xmlPath;
-	} else {
-	    StudentHelperClass.log("TestNG XML not found");
+	/**
+	 * Sets the checkstyle xml file, if the path is correct.
+	 * @param xmlPath - path to xml
+	 */
+	public final void setCheckstyleXml(final String xmlPath) {
+		File xml = new File(xmlPath);
+		if (xml.exists() && !xml.isDirectory()) {
+			this.checkstyleXmlPathName = xmlPath;
+			customCheckstyleSet = true;
+			StudentHelperClass.log("Checkstyle XML set successfully");
+		} else {
+			StudentHelperClass.log("Checkstyle XML not found");
+		}
 	}
-    }
 
-    /**
-     * Sets the test folder name.
-     * @param testRootName - path to test folder
-     */
-    public final void setTestRootName(final String testRootName) {
-	this.testRootName = testRootName;
-	this.testRoot = new File(testRootName);
-    }
-
-    /**
-     * Sets the verbosity of the project.
-     * TestNG has levels 1-10, this project has less.
-     * @param verbosity - verbosity level
-     */
-    public final void setVerbosity(final int verbosity) {
-	StudentHelperClass.setVerbosity(verbosity);
-    }
-
-    /**
-     * Output JSON instead of normal strings.
-     * @param value
-     */
-    public final void outputJSON(final boolean value) {
-	this.jsonOutput = value;
-    }
-
-    /**
-     * Disables stdout to suppress students' debug messages.
-     * @param value
-     */
-    public final void muteCodeOutput(final boolean value) {
-	this.muteCodeOutput = value;
-    }
-
-    /**
-     * Sets the quiet state, if JSON output is enabled.
-     * @param quiet state
-     */
-    public final void setQuiet(final boolean quiet) {
-	if (jsonOutput) {
-	    this.quiet = quiet;
-	} else {
-	    StudentHelperClass.log("Quiet setting not set since json is not enabled.");
+	/**
+	 * Sets the content root filename.
+	 * @param contentRootName - path to content root
+	 */
+	public final void setContentRootName(final String contentRootName) {
+		this.contentRootName = contentRootName;
+		this.contentRoot = new File(contentRootName);
 	}
-    }
 
-    /**
-     * Returns the json of this instance.
-     * @return json
-     */
-    public final String getJson() {
-	if (json != null) {
-	    return json.build().toString();
+	/**
+	 * Sets the temporary folder name.
+	 * @param tempDirectoryName - path to temp folder
+	 */
+	public final void setTempDirectoryName(final String tempDirectoryName) {
+		this.tempDirectoryName = tempDirectoryName;
+		this.tempDirectory = new File(tempDirectoryName);
 	}
-	return null;
-    }
 
-    /**
-     * Sets the output file path.
-     * @param filename where the file will be written to
-     */
-    public final void setOutputFile(final String filename) {
-	this.outputFilename = filename;
-    }
+	/**
+	 * Sets the TestNG xml file, if the path is correct.
+	 * @param xmlPath - path to xml
+	 */
+	public final void setTestNGXml(final String xmlPath) {
+		File xml = new File(xmlPath);
+		if (xml.exists() && !xml.isDirectory()) {
+			this.testNGXmlPathName = xmlPath;
+		} else {
+			StudentHelperClass.log("TestNG XML not found");
+		}
+	}
 
-    /**
-     * Sets the compiler options.
-     * @param options - information to be passed to the compiler
-     */
-    public final void setCompilerOptions(String options) {
-    	this.compilerOptions = options;
-    }
+	/**
+	 * Sets the test folder name.
+	 * @param testRootName - path to test folder
+	 */
+	public final void setTestRootName(final String testRootName) {
+		this.testRootName = testRootName;
+		this.testRoot = new File(testRootName);
+	}
 
-    /**
-     * Gets the compiler options.
-     * @return information to be passed to the compiler
-     */
-    public final String getCompilerOptions() {
-    	return this.compilerOptions;
-    }
+	/**
+	 * Sets the verbosity of the project.
+	 * TestNG has levels 1-10, this project has less.
+	 * @param verbosity - verbosity level
+	 */
+	public final void setVerbosity(final int verbosity) {
+		StudentHelperClass.setVerbosity(verbosity);
+	}
+
+	/**
+	 * Output JSON instead of normal strings.
+	 * @param value
+	 */
+	public final void outputJSON(final boolean value) {
+		this.jsonOutput = value;
+	}
+
+	/**
+	 * Disables stdout to suppress students' debug messages.
+	 * @param value
+	 */
+	public final void muteCodeOutput(final boolean value) {
+		this.muteCodeOutput = value;
+	}
+
+	/**
+	 * Sets the quiet state, if JSON output is enabled.
+	 * @param quiet state
+	 */
+	public final void setQuiet(final boolean quiet) {
+		if (jsonOutput) {
+			this.quiet = quiet;
+		} else {
+			StudentHelperClass.log("Quiet setting not set since json is not enabled.");
+		}
+	}
+
+	/**
+	 * Returns the json of this instance.
+	 * @return json
+	 */
+	public final String getJson() {
+		if (json != null) {
+			return json.build().toString();
+		}
+		return null;
+	}
+
+	/**
+	 * Sets the output file path.
+	 * @param filename where the file will be written to
+	 */
+	public final void setOutputFile(final String filename) {
+		this.outputFilename = filename;
+	}
+
+	/**
+	 * Sets the compiler options.
+	 * @param options - information to be passed to the compiler
+	 */
+	public final void setCompilerOptions(String options) {
+		this.compilerOptions = options;
+	}
+
+	/**
+	 * Gets the compiler options.
+	 * @return information to be passed to the compiler
+	 */
+	public final String getCompilerOptions() {
+		return this.compilerOptions;
+	}
 }
