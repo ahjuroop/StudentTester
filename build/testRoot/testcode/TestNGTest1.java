@@ -29,13 +29,13 @@ public class TestNGTest1 {
 	public void testCrashHorribly() {
 		StudentTesterExample.crashHorribly();
 	}
-	/*
+
 	@Gradable(printExceptionMessage = true)
 	@Test(timeOut = 500)
 	public void testHangHorribly() {
 		StudentTesterExample.hangHorribly();
 	}
-	*/
+
 	@Gradable(description = "This is an annotated TestNG test. I should be visible in the report.")
 	@Test
 	public void testSucceedAnnotation() {
