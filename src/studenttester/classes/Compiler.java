@@ -193,6 +193,10 @@ public class Compiler {
 				case "compiler.err.missing.ret.stmt":
 					System.out.println("Hint: the function expects to return something.");
 					break;
+
+				case "compiler.err.premature.eof":
+					System.out.println("Hint: part of the file might be missing.");
+					break;
 					// etc...
 
 				default:

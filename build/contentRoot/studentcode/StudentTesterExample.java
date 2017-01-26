@@ -18,7 +18,7 @@ public class StudentTesterExample {
 	public static void crashHorribly() {
 		throw new NullPointerException("Oops!");
 	}
-	// kõik on katkiss
+
 	public static void hangHorribly() {
 		for (int i = 0; i < 2; i++) {
 			i--;
