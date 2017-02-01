@@ -134,42 +134,6 @@ public final class StudentReporter implements IReporter, IBaseStudentReporter {
 					}
 				}
 
-				//leaving this in for a while just in case
-				/*
-				for (ITestResult passedTest : tc.getPassedTests().getAllResults()) {
-					Gradable testMetadata = getTestMetadata(passedTest);
-					if (testMetadata != null) {
-						output += (getTestReportString(passedTest, testMetadata));
-						passed += testMetadata.weight();
-						total += testMetadata.weight();
-					} else {
-						output += (getTestReportString(passedTest, getMockAnnotation()));
-						passed += getMockAnnotation().weight();
-						total += getMockAnnotation().weight();
-					}
-				}
-				for (ITestResult failedTest : tc.getFailedTests().getAllResults()) {
-					Gradable testMetadata = getTestMetadata(failedTest);
-					if (testMetadata != null) {
-						output += (getTestReportString(failedTest, testMetadata));
-						total += testMetadata.weight();
-					} else {
-						output += (getTestReportString(failedTest, getMockAnnotation()));
-						total += getMockAnnotation().weight();
-					}
-				}
-				for (ITestResult skippedTest : tc.getSkippedTests().getAllResults()) {
-					Gradable testMetadata = getTestMetadata(skippedTest);
-					if (testMetadata != null) {
-						output += (getTestReportString(skippedTest, testMetadata));
-						total += testMetadata.weight();
-					} else {
-						output += (getTestReportString(skippedTest, getMockAnnotation()));
-						total += getMockAnnotation().weight();
-					}
-				}
-				*/
-
 				overallTotal += total;
 				overallPassed += passed;
 
@@ -226,10 +190,9 @@ public final class StudentReporter implements IReporter, IBaseStudentReporter {
 		String str = "";
 		switch (test.getStatus()) {
 		case ITestResult.SUCCESS:
-			str += String.format("SUCCESS: %s\n\t%d msecs, unit test weight: %d units\n", test.getName(),
-					test.getEndMillis() - test.getStartMillis(), testMetadata.weight());
 			if (reportMode == ReportMode.VERBOSE) {
-				// if no description, omit this line
+				str += String.format("SUCCESS: %s\n\t%d msecs, unit test weight: %d units\n", test.getName(),
+						test.getEndMillis() - test.getStartMillis(), testMetadata.weight());
 				str += (testMetadata.description() == null ? "" : String.format("\tDescription: %s\n", testMetadata.description()));
 			}
 			return str;

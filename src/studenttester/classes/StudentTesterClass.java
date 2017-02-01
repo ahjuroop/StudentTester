@@ -4,11 +4,15 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -65,6 +69,7 @@ public class StudentTesterClass {
 	/**
 	 * Runs the tester with current configuration.
 	 */
+	@SuppressWarnings("deprecation")
 	public final void run() {
 
 		// start measuring time
@@ -150,11 +155,17 @@ public class StudentTesterClass {
 		StudentHelperClass.restoreStdOut();
 		// print out json results
 		if (jsonOutput) {
-			json.add("output", StudentHelperClass.getStdout().toString());
+			try {
+				json.add("output", StudentHelperClass.getStdout().toString("UTF-8"));
+			} catch (UnsupportedEncodingException e) {
+				StudentHelperClass.log("UTF-8 decoding failed: " + e.getMessage());
+				json.add("output", StudentHelperClass.getStdout().toString());
+			}
 			json.add("results", singleResults);
 			if (!quiet) {
 				if (outputFilename != null) {
-					try (PrintWriter out = new PrintWriter(outputFilename)) {
+					try (PrintWriter out = new PrintWriter(
+							new OutputStreamWriter(new FileOutputStream(outputFilename), StandardCharsets.UTF_8))) {
 						out.println(json.build().toString());
 					} catch (FileNotFoundException e) {
 						StudentHelperClass.log(e.getMessage());
@@ -165,10 +176,18 @@ public class StudentTesterClass {
 			}
 		}
 		StudentHelperClass.deleteFolder(tempDirectory);
-		StudentHelperClass.log("Finished. Run time in ms: " + (System.nanoTime() - startTime) / 1000000);
 
-		// FIXME: for some reason, TestNG might not kill tests that timed out. As a workaround we'll kill the process
-		Runtime.getRuntime().halt(0);
+		// if any unit tests are still alive, kill them ungracefully to enable the program to exit
+		Set<Thread> threadSet = Thread.getAllStackTraces().keySet();
+		for (Thread t : threadSet) {
+			if (t.getName().startsWith("TestNGInvoker")) {
+				StudentHelperClass.log(String.format("Warning: attempting to kill stuck thread %s, consider "
+						+ "making the method exit on InterruptedException", t.getName()));
+				t.stop();
+			}
+		}
+
+		StudentHelperClass.log("Finished. Run time in ms: " + (System.nanoTime() - startTime) / 1000000);
 	}
 
 	/**

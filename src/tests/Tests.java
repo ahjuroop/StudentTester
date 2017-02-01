@@ -285,6 +285,6 @@ public class Tests {
 				+     "}"
 				+ "}", testCounter));
 		JsonObject results = getTestResults(false, true);
-		Assert.assertTrue(results.getString("output").contains(String.format("Error in StudentCode%1$s.java: ';' expected", testCounter)));
+		Assert.assertTrue(results.getString("output").contains(String.format("';' expected", testCounter)));
 	}
 }
