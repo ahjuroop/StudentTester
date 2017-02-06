@@ -1,5 +1,7 @@
 # StudentTester
 
+[Binary releases here](https://drive.google.com/open?id=0B3eDkXG2UC2tS1JRUi1Dc1dmQ28)
+
 The result of my thesis is a prototype codenamed StudentTester that uses the Java programming language to test code.
 
 The testing framework of choice is TestNG, a highly customisable framework that can run unit tests written in JUnit as well. For code analysis, a popular tool called Checkstyle is used.
