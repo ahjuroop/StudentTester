@@ -116,10 +116,6 @@ public final class StudentReporter implements IReporter, IBaseStudentReporter {
 						Gradable testMetadata = getTestMetadata(unitTestResult);
 						if (testMetadata != null) {
 							output += (getTestReportString(unitTestResult, testMetadata));
-							if (type == FAILURE || type == SKIP) {
-								failureReasons.add(String.format("FAILURE: %s (%s)",
-										unitTestResult.getName(), unitTestResult.getThrowable().toString()));
-							}
 							if (type == SUCCESS) {
 								passed += testMetadata.weight();
 							}
@@ -130,6 +126,10 @@ public final class StudentReporter implements IReporter, IBaseStudentReporter {
 								passed += getMockAnnotation().weight();
 							}
 							total += getMockAnnotation().weight();
+						}
+						if (type == FAILURE || type == SKIP) {
+							failureReasons.add(String.format("FAILURE: %s (%s)",
+									unitTestResult.getName(), unitTestResult.getThrowable().toString()));
 						}
 					}
 				}

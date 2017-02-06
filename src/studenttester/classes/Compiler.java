@@ -41,9 +41,12 @@ public class Compiler {
 		this.toBeCompiled = toBeCompiled;
 		this.tempDirectory = tempDirectory;
 		this.testRoot = testRoot;
+		options = new ArrayList<String>();
 		if (compilerOptions != null) {
-			this.options = Arrays.asList(compilerOptions.split(" "));
+			this.options.addAll(Arrays.asList(compilerOptions.split(" ")));
 		}
+		// use utf8 encoding when compiling
+		this.options.addAll(Arrays.asList("-encoding", "utf8"));
 	}
 
 	/**
