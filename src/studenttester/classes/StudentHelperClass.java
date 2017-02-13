@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -60,6 +61,11 @@ public final class StudentHelperClass {
 	 * PrintStream for redirecting output.
 	 */
 	private static PrintStream ps;
+
+	/**
+	 * Exception message that SecurityException will use and StudentReporter must recognize.
+	 */
+	public static final String EXITVM_MSG = "exitVM call caught";
 
 	/**
 	 * Checks if any of the objects in the arguments are null.
@@ -135,7 +141,7 @@ public final class StudentHelperClass {
 		final SecurityManager securityManager = new SecurityManager() {
 			public void checkPermission(final Permission permission) {
 				if (permission.getName() != null && permission.getName().contains("exitVM")) {
-					throw new SecurityException("exitVM call caught.");
+					throw new SecurityException(EXITVM_MSG);
 				}
 			}
 		};
@@ -319,15 +325,19 @@ public final class StudentHelperClass {
 
 	/**
 	 * Quick test to find out whether the file is a JUnit test.
-	 * TODO: fix a bug where the function would return true if the file
-	 * contained the string "import org.junit"
-	 * @param testClassFile file to be read
-	 * @return whether the file contains the string "import org.junit"
-	 * @throws IOException when something goes wrong
+	 * The file must already be compiled and in the classpath.
+	 * @param testClassPath relative filepath to the class, e.g. "mypackage/Test.java"
+	 * @return whether the file contains at least one JUnit test.
+	 * @throws ClassNotFoundException when something goes wrong
 	 */
-	public static boolean isJUnitClass(final File testClassFile) throws IOException {
-		String content = new String(Files.readAllBytes(Paths.get(testClassFile.getAbsolutePath())), StandardCharsets.UTF_8);
-		return content.contains("import org.junit");
+	public static boolean isJUnitClass(final String testClassPath) throws ClassNotFoundException {
+		Class<?> classToTest = Class.forName(filePathToClassPath(testClassPath));
+		for (Method unitTest : classToTest.getMethods()) {				// if the class contains at least one
+			if (unitTest.isAnnotationPresent(org.junit.Test.class)) {	// JUnit method, assume it's a JUnit test
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/**

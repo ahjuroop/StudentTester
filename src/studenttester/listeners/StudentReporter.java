@@ -204,6 +204,11 @@ public final class StudentReporter implements IReporter, IBaseStudentReporter {
 			if (testMetadata.printExceptionMessage() || reportMode == ReportMode.VERBOSE  || reportMode == ReportMode.MAXVERBOSE) {
 				str += String.format("\tDetailed information:  %s\n", test.getThrowable().getMessage());
 			}
+			if (test.getThrowable() instanceof SecurityException
+					&& test.getThrowable().getMessage().equals(StudentHelperClass.EXITVM_MSG)) {
+				str += "\tWarning: It seems that System.exit() is used in the code. "
+						+ "Please remove it to prevent the tester from working abnormally.\n";
+			}
 			if (testMetadata.printStackTrace() || reportMode == ReportMode.MAXVERBOSE) {
 				StringWriter sw = new StringWriter();
 				PrintWriter pw = new PrintWriter(sw);
