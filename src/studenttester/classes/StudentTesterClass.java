@@ -249,8 +249,12 @@ public class StudentTesterClass {
 				}
 
 				// run in parallel, maybe more efficient?
+				/*
 				suite.setParallel(ParallelMode.METHODS);
 				suite.setThreadCount(4);
+				*/
+				// nope, messes up stdout
+
 				suites.add(suite);
 				testng.setXmlSuites(suites);
 			} else {
