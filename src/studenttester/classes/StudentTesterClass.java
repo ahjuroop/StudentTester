@@ -53,6 +53,7 @@ public class StudentTesterClass {
 	/**
 	 * Runs the tester with current configuration.
 	 */
+	@SuppressWarnings("deprecation")
 	public final void run() {
 
 		// start measuring time
@@ -96,7 +97,7 @@ public class StudentTesterClass {
 			StudentHelperClass.redirectStdOut();
 		}
 
-		System.out.println("TEST RESULTS\n");
+		System.out.format("TEST RESULTS\n\n");
 
 		// run checkstyle
 		if (checkstyleEnabled) {
@@ -112,10 +113,14 @@ public class StudentTesterClass {
 				StudentHelperClass.deleteFolder(tempRoot);
 				StudentHelperClass.copyFolder(contentRoot, tempRoot);
 				StudentHelperClass.copyFolder(testRoot, tempRoot);
-				List<File> toBeCompiled = new ArrayList<File>();
-				StudentHelperClass.populateFiles(tempRoot, toBeCompiled);
-				// compile everything
-				CompilerRunner compiler = new CompilerRunner(toBeCompiled, tempRoot, testRoot, compilerOptions);
+
+				List<String> testFilenames = new ArrayList<String>();
+				StudentHelperClass.populateFilenames(testRoot, testFilenames, true);
+
+				// compile tests
+				CompilerRunner compiler = new CompilerRunner(testFilenames, tempRoot, testRoot);
+				compiler.addOptions(compilerOptions);
+				compiler.compileSeparately(true);
 				if (compiler.run()) {
 					TestNGRunner testng = new TestNGRunner(tempRoot, testRoot, isJsonOutput);
 					if (isJsonOutput) {
@@ -133,6 +138,7 @@ public class StudentTesterClass {
 						+ "Please check if the folder structure matches package definitions.");
 			} catch (Exception e) {
 				StudentHelperClass.log(e.toString());
+				e.printStackTrace();
 				System.out.println("Internal error, cannot continue.");
 			} finally {
 				StudentHelperClass.enableSystemExit();

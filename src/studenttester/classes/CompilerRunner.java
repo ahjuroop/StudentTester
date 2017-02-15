@@ -24,29 +24,46 @@ import javax.tools.ToolProvider;
  */
 public class CompilerRunner {
 
-	private List<File> toBeCompiled;
+	private List<String> toBeCompiled = new ArrayList<String>();;
+	private boolean compileSeparately = false;
 	private File tempDirectory, testRoot;
-	private List<String> options = null;
-	Writer compilerWriter;
+	private List<String> options = new ArrayList<String>();
+	private StandardJavaFileManager fileManager;
+	private JavaCompiler compiler;
+	private Writer compilerWriter;
 
 	/**
 	 * Creates a new compiler object.
-	 * @param toBeCompiled - files to compile
+	 * @param toBeCompiledRelative - names of files to compiled, must exist in tempDirectory and be given in relative paths
 	 * @param tempDirectory - folder to be put into classpath after compilation
 	 * @param testRoot - folder containing tests
-	 * @param compilerOptions 
+	 * @param compilerOptions
 	 */
-	public CompilerRunner(final List<File> toBeCompiled, final File tempDirectory,
-			final File testRoot, String compilerOptions) {
-		this.toBeCompiled = toBeCompiled;
+	public CompilerRunner(final List<String> toBeCompiledRelative, final File tempDirectory, final File testRoot) {
+		// convert relative paths to absolute ones for the compiler
+		toBeCompiledRelative.forEach((name) -> this.toBeCompiled.add(new File(tempDirectory, name).getAbsolutePath()));
 		this.tempDirectory = tempDirectory;
 		this.testRoot = testRoot;
-		options = new ArrayList<String>();
+		// use utf8 encoding when compiling, pointer to source directory
+		this.options.addAll(Arrays.asList("-encoding", "utf8", "-sourcepath", tempDirectory.getAbsolutePath()));
+	}
+
+	/**
+	 * Adds additional javac options.
+	 * @param compilerOptions - options as string
+	 */
+	public void addOptions(final String compilerOptions) {
 		if (compilerOptions != null) {
-			this.options.addAll(Arrays.asList(compilerOptions.split(" ")));
+			options.addAll(Arrays.asList(compilerOptions.split(" ")));
 		}
-		// use utf8 encoding when compiling
-		this.options.addAll(Arrays.asList("-encoding", "utf8"));
+	}
+
+	/**
+	 * Sets whether the compiler should compile files separately to skip classes having errors.
+	 * @param separate - set true to compile independent files separately (default false)
+	 */
+	public void compileSeparately(final boolean separate) {
+		this.compileSeparately = separate;
 	}
 
 	/**
@@ -55,30 +72,38 @@ public class CompilerRunner {
 	 */
 	public final boolean run() {
 		try {
-			JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+			compiler = ToolProvider.getSystemJavaCompiler();
 			if (compiler == null) {
 				throw new StudentTesterException("Compiler object is null, is jdk used?");
 			}
 			if (toBeCompiled.size() == 0) {
 				throw new StudentTesterException("Nothing to compile.");
 			}
-			StandardJavaFileManager fileManager = compiler.getStandardFileManager(null, null, null);
+
+			fileManager = compiler.getStandardFileManager(null, null, null);
 			DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<JavaFileObject>();
 			compilerWriter = new StringWriter(); // compilation output
-			Iterable<? extends JavaFileObject> compilationUnits = fileManager.getJavaFileObjectsFromFiles(toBeCompiled);
-
-			StudentHelperClass.log("Beginning compilation, " + toBeCompiled.size() + " files in queue");
+			StudentHelperClass.log("Beginning compilation, " + toBeCompiled.size() + " files without dependencies in queue");
 			if (options != null && options.size() > 0) {
 				StudentHelperClass.log("Compiler options: " + options);
 			} else {
 				StudentHelperClass.log("No compiler options specified");
 			}
 
-			boolean compileSuccess = compiler.getTask(compilerWriter, fileManager, diagnostics, options, null, compilationUnits).call();
-			StudentHelperClass.log(compileSuccess? "Compilation appears to have succeeded" : "Compilation failed");
-			fileManager.close();
+			boolean atLeastOneSucess = false;
+			if (compileSeparately) {
+				for (String filename : toBeCompiled) {
+					List<String> temp = new ArrayList<String>();
+					temp.add(filename);
+					if (compile(temp, diagnostics)) {
+						atLeastOneSucess = true;
+					}
+				}
+			} else {
+				atLeastOneSucess = compile(toBeCompiled, diagnostics);
+			}
 
-			if (compileSuccess) {
+			if (atLeastOneSucess) {
 				// workaround to put the temporary folder to classpath
 				URL url = tempDirectory.toURI().toURL();
 				URLClassLoader urlClassLoader = (URLClassLoader) ClassLoader.getSystemClassLoader();
@@ -88,27 +113,43 @@ public class CompilerRunner {
 				method.invoke(urlClassLoader, new Object[]{url});
 			}
 
+			fileManager.close();
+
 			// compilation errors were found
-			if (!compileSuccess || diagnostics.getDiagnostics().size() > 0) {
-				System.out.println("Compilation failed, cannot continue.");
+			if (atLeastOneSucess && diagnostics.getDiagnostics().size() > 0) {
+				System.out.println("Compilation succeeded partially.");
 				handleCompilationErrors(diagnostics.getDiagnostics());
-				return false;
-			} else {
+				return true;
+			} else if (atLeastOneSucess) {
 				// compilation succeeded
+				System.out.println("Compilation succeeded.\n");
 				return true;
 			}
+
 		} catch (UnsupportedOperationException e) {
-			StudentHelperClass.restoreStdOut();
 			System.out.println("Couldn't get the compiler, testing cannot continue.");
 			StudentHelperClass.log(e.toString());
 		} catch (Exception e) {
-			StudentHelperClass.restoreStdOut();
-			System.out.println("Testing failed, cannot continue.");
 			StudentHelperClass.log(e.toString());
+			e.printStackTrace();
 		} finally {
 			StudentHelperClass.log(compilerWriter.toString());
 		}
+		System.out.println("Compilation failed.");
 		return false;
+	}
+
+	/**
+	 * Compiles files given.
+	 * @param filenames list of files to be compiled
+	 * @param diagnostics object to store diagnostics in
+	 * @return success
+	 */
+	private boolean compile(final List<String> filenames, DiagnosticCollector<JavaFileObject> diagnostics) {
+		Iterable<? extends JavaFileObject> compilationUnits = fileManager.getJavaFileObjectsFromStrings(filenames);
+		boolean compileSuccess = compiler.getTask(compilerWriter, null, diagnostics, options, null, compilationUnits).call();
+		StudentHelperClass.log((compileSuccess? "Compilation appears to have succeeded for " : "Compilation failed for ") + filenames);
+		return compileSuccess;
 	}
 
 	/**
@@ -138,20 +179,19 @@ public class CompilerRunner {
 				}
 			}
 
+			previousError = diagnostic.getCode();
 			String problematicFile = new File(diagnostic.getSource().getName()).getName();
 
 			// do not show code from test files
 			if (testFileNames.contains(problematicFile)) {
 				StudentHelperClass.log(problematicFile + " is a test class, will not display the full error.");
 				StudentHelperClass.log(String.format("Error on line %d in %s\n", diagnostic.getLineNumber(),
-						diagnostic.toString().replace(tempDirectory.getAbsolutePath(), "")));
+						diagnostic.toString()));
 				System.out.println("Error in " + problematicFile + ": " + diagnostic.getMessage(null));
 			} else {
 				System.out.format("Error on line %d in %s\n", diagnostic.getLineNumber(),
 						diagnostic.toString().replace(tempDirectory.getAbsolutePath(), ""));
 			}
-
-			previousError = diagnostic.getCode();
 
 			// simple switch statement to provide hints to common compilation problems
 			if (sameErrorCounter == 0 && diagnostic.getCode() != null) {
@@ -197,7 +237,7 @@ public class CompilerRunner {
 					break;
 
 				case "compiler.err.missing.ret.stmt":
-					System.out.println("Hint: the function expects to return something.");
+					// System.out.println("Hint: the function expects to return something.");
 					break;
 
 				case "compiler.err.premature.eof":
@@ -216,5 +256,6 @@ public class CompilerRunner {
 		if (sameErrorCounter > 0) {
 			System.out.println("Skipped " + sameErrorCounter + " error(s) of the same type.");
 		}
+		System.out.println();
 	}
 }

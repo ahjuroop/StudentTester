@@ -63,6 +63,7 @@ public class TestNGRunner {
 	@SuppressWarnings("deprecation")
 	public final void run() throws Exception {
 		TestNG testng = new TestNG();
+		boolean incompleteTests = false;
 
 		// search for TestNG xml file
 		if (testNGXmlPathName == null) {
@@ -82,10 +83,11 @@ public class TestNGRunner {
 
 				List<XmlClass> junitClasses = new ArrayList<XmlClass>();
 				List<XmlClass> testngClasses = new ArrayList<XmlClass>();
+				
 				for (String testClass : testFilenames) {
-					XmlClass c = new XmlClass(StudentHelperClass.filePathToClassPath(testClass));
 					try {
-						System.err.println(testClass);
+						Class.forName(StudentHelperClass.filePathToClassPath(testClass)); // confirm the existence of a compiled class
+						XmlClass c = new XmlClass(StudentHelperClass.filePathToClassPath(testClass));
 						if (StudentHelperClass.isJUnitClass(testClass)) {
 							StudentHelperClass.log(String.format("Found JUnit class %s", testClass));
 							junitClasses.add(c);
@@ -96,6 +98,7 @@ public class TestNGRunner {
 					} catch (ClassNotFoundException e) {
 						StudentHelperClass.log(e.toString());
 						StudentHelperClass.log("Skipping " + testClass);
+						incompleteTests = true;
 					}
 				}
 				if (junitClasses.size() > 0) {
@@ -170,9 +173,7 @@ public class TestNGRunner {
 		}
 
 		// disable built-in listeners to reduce load
-		if (StudentHelperClass.getVerbosity() < 5) {
-			testng.setUseDefaultListeners(false);
-		}
+		testng.setUseDefaultListeners(false);
 
 		// redirect some debug messages to stderr
 		StudentHelperClass.stdoutToErr();
