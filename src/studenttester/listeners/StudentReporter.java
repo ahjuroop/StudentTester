@@ -68,7 +68,7 @@ public final class StudentReporter implements IReporter, IBaseStudentReporter {
 
 		for (ISuite suite : suites) {
 
-			output += String.format("Test suite %s\n", suite.getName());
+			output += String.format("Test suite \"%s\"\n", suite.getName());
 			Map<String, ISuiteResult> suiteResults = suite.getResults();
 
 			for (ISuiteResult sr : suiteResults.values()) {

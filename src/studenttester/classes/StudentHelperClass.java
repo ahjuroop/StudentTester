@@ -7,11 +7,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.Permission;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -66,6 +68,13 @@ public final class StudentHelperClass {
 	 * Exception message that SecurityException will use and StudentReporter must recognize.
 	 */
 	public static final String EXITVM_MSG = "exitVM call caught";
+
+	/**
+	 * Stores possible unit test class types.
+	 * @author Andres
+	 *
+	 */
+	public enum TEST_CLASS_TYPE { TESTNG, JUNIT, NOT_TEST_CLASS };
 
 	/**
 	 * Checks if any of the objects in the arguments are null.
@@ -325,20 +334,23 @@ public final class StudentHelperClass {
 	}
 
 	/**
-	 * Quick test to find out whether the file is a JUnit test.
+	 * Quick test to find out whether the file is a JUnit test or a TestNG test.
 	 * The file must already be compiled and in the classpath.
 	 * @param testClassPath relative filepath to the class, e.g. "mypackage/Test.java"
-	 * @return whether the file contains at least one JUnit test.
+	 * @return the type of class.
 	 * @throws ClassNotFoundException when something goes wrong
 	 */
-	public static boolean isJUnitClass(final String testClassPath) throws ClassNotFoundException {
+	public static TEST_CLASS_TYPE getClassType(final String testClassPath) throws ClassNotFoundException {
 		Class<?> classToTest = Class.forName(filePathToClassPath(testClassPath));
-		for (Method unitTest : classToTest.getMethods()) {				// if the class contains at least one
+		for (Method unitTest : classToTest.getDeclaredMethods()) {		// if the class contains at least one
 			if (unitTest.isAnnotationPresent(org.junit.Test.class)) {	// JUnit method, assume it's a JUnit test
-				return true;
+				return TEST_CLASS_TYPE.JUNIT;
+			}
+			if (unitTest.isAnnotationPresent(org.testng.annotations.Test.class)) {	// TestNG method, assume it's a TestNG test
+				return TEST_CLASS_TYPE.TESTNG;
 			}
 		}
-		return false;
+		return TEST_CLASS_TYPE.NOT_TEST_CLASS;
 	}
 
 	/**

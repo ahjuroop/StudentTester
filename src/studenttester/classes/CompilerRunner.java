@@ -124,6 +124,12 @@ public class CompilerRunner {
 				// compilation succeeded
 				System.out.println("Compilation succeeded.\n");
 				return true;
+			} else {
+				System.out.println("Compilation failed.");
+				if (diagnostics.getDiagnostics().size() > 0) {
+					handleCompilationErrors(diagnostics.getDiagnostics());
+				}
+				return false;
 			}
 
 		} catch (UnsupportedOperationException e) {
