@@ -15,7 +15,7 @@ import java.util.Set;
 import javax.json.Json;
 import javax.json.JsonArrayBuilder;
 import javax.json.JsonObjectBuilder;
-
+import static studenttester.classes.Logger.log;
 /**
  *
  * @author Andres
@@ -62,7 +62,7 @@ public class StudentTesterClass {
 		// check if any necessary variables are missing
 		if (StudentHelperClass.checkAnyNull(testRoot, testRootName, tempRoot,
 				tempRootName, contentRoot, contentRootName)) {
-			StudentHelperClass.log("One or more necessary directories are missing");
+			log("One or more necessary directories are missing");
 			if (isJsonOutput) {
 				System.out.print("{\"output\": \"Internal error, testing cannot continue.\"}");
 			}
@@ -79,15 +79,15 @@ public class StudentTesterClass {
 			try {
 				for (File f: javaFiles) {
 					String content = new String(Files.readAllBytes(Paths.get(f.getAbsolutePath())), StandardCharsets.UTF_8);
-					StudentHelperClass.log("Adding file " + f.getName() + " to output");
+					log("Adding file " + f.getName() + " to output");
 					sourceList.add(Json.createObjectBuilder()
 							.add("path", f.getAbsolutePath())
 							.add("content", content));
 				}
 			} catch (FileNotFoundException e) {
-				StudentHelperClass.log(e.getMessage());
+				log(e.getMessage());
 			} catch (IOException e) {
-				StudentHelperClass.log(e.getMessage());
+				log(e.getMessage());
 			}
 
 			json.add("source", sourceList);
@@ -133,11 +133,11 @@ public class StudentTesterClass {
 			} catch (SecurityException e) {
 				System.out.println("Testing was aborted via System.exit(). Remove the statement to continue.");
 			} catch (NoClassDefFoundError e) {
-				StudentHelperClass.log(e.toString());
+				log(e.toString());
 				System.out.println("Could not run one or more classes. "
 						+ "Please check if the folder structure matches package definitions.");
 			} catch (Exception e) {
-				StudentHelperClass.log(e.toString());
+				log(e.toString());
 				e.printStackTrace();
 				System.out.println("Internal error, cannot continue.");
 			} finally {
@@ -155,7 +155,7 @@ public class StudentTesterClass {
 			try {
 				json.add("output", StudentHelperClass.getStdout().toString("UTF-8"));
 			} catch (UnsupportedEncodingException e) {
-				StudentHelperClass.log("UTF-8 decoding failed: " + e.getMessage());
+				log("UTF-8 decoding failed: " + e.getMessage());
 				json.add("output", StudentHelperClass.getStdout().toString());
 			}
 			json.add("results", singleResults);
@@ -165,7 +165,7 @@ public class StudentTesterClass {
 							new OutputStreamWriter(new FileOutputStream(outputFilename), StandardCharsets.UTF_8))) {
 						out.println(json.build().toString());
 					} catch (FileNotFoundException e) {
-						StudentHelperClass.log(e.getMessage());
+						log(e.getMessage());
 					}
 				} else {
 					System.out.println(json.build().toString());
@@ -178,13 +178,13 @@ public class StudentTesterClass {
 		Set<Thread> threadSet = Thread.getAllStackTraces().keySet();
 		for (Thread t : threadSet) {
 			if (t.getName().startsWith("TestNGInvoker")) {
-				StudentHelperClass.log(String.format("Warning: attempting to kill stuck thread %s, consider "
+				log(String.format("Warning: attempting to kill stuck thread %s, consider "
 						+ "making the method exit on InterruptedException", t.getName()));
 				t.stop();
 			}
 		}
 
-		StudentHelperClass.log("Finished. Run time in ms: " + (System.nanoTime() - startTime) / 1000000);
+		log("Finished. Run time in ms: " + (System.nanoTime() - startTime) / 1000000);
 	}
 
 
@@ -247,7 +247,7 @@ public class StudentTesterClass {
 			if (xml.exists() && xml.isFile()) {
 				return xml.getPath();
 			}
-			StudentHelperClass.log("Checkstyle XML not found in root, falling back to default rules");
+			log("Checkstyle XML not found in root, falling back to default rules");
 		}
 		return DEFAULT_CHECKSTYLE_RULES;
 	}
@@ -261,9 +261,9 @@ public class StudentTesterClass {
 		if (xml.exists() && !xml.isDirectory()) {
 			this.checkstyleXmlPathName = xmlPath;
 			isCustomCheckstyleSet = true;
-			StudentHelperClass.log("Checkstyle XML set successfully");
+			log("Checkstyle XML set successfully");
 		} else {
-			StudentHelperClass.log("Checkstyle XML not found");
+			log("Checkstyle XML not found");
 		}
 	}
 
@@ -294,7 +294,7 @@ public class StudentTesterClass {
 		if (xml.exists() && !xml.isDirectory()) {
 			this.testNGXmlPathName = xmlPath;
 		} else {
-			StudentHelperClass.log("TestNG XML not found");
+			log("TestNG XML not found");
 		}
 	}
 
@@ -313,7 +313,7 @@ public class StudentTesterClass {
 	 * @param verbosity - verbosity level
 	 */
 	public final void setVerbosity(final int verbosity) {
-		StudentHelperClass.setVerbosity(verbosity);
+		Logger.setVerbosity(verbosity);
 	}
 
 	/**
@@ -340,7 +340,7 @@ public class StudentTesterClass {
 		if (isJsonOutput) {
 			this.isQuiet = quiet;
 		} else {
-			StudentHelperClass.log("Quiet setting not set since json is not enabled.");
+			log("Quiet setting not set since json is not enabled.");
 		}
 	}
 

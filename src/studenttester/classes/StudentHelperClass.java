@@ -7,14 +7,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
-import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.security.Permission;
-import java.util.Arrays;
 import java.util.List;
+
+import static studenttester.classes.Logger.log;
 
 /**
  * Helper class for common functions.
@@ -22,11 +19,6 @@ import java.util.List;
  *
  */
 public final class StudentHelperClass {
-
-	/**
-	 * Global verbosity level. TestNG has a maximum value of 10.
-	 */
-	private static int verbosity = 0;
 
 	/**
 	 * Saves the original PrintStream to restore printing
@@ -244,15 +236,7 @@ public final class StudentHelperClass {
         return output.toString();
     }
 	 */
-	/**
-	 * Prints strings to standard error output if verbosity is more than 1.
-	 * @param string - message to print
-	 */
-	public static void log(final String string) {
-		if (verbosity > 1) {
-			System.err.println("[StudentTester] " + string);
-		}
-	}
+
 
 	/**
 	 * Returns a list of java filenames found in a folder.
@@ -354,27 +338,11 @@ public final class StudentHelperClass {
 	}
 
 	/**
-	 * Sets the verbosity.
-	 * @param verbosity level
-	 */
-	public static void setVerbosity(final int verbosity) {
-		StudentHelperClass.verbosity = verbosity;
-	}
-
-	/**
 	 * Returns the output stream dump.
 	 * @return ByteArrayOutputStream
 	 */
 	public static ByteArrayOutputStream getStdout() {
 		return stdoutStream;
-	}
-
-	/**
-	 * Gets the verbosity.
-	 * @return verbosity
-	 */
-	public static int getVerbosity() {
-		return verbosity;
 	}
 
 	/**

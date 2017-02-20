@@ -1,5 +1,5 @@
 package studenttester.classes;
-
+import static studenttester.classes.Logger.log;
 import java.io.File;
 import java.io.StringWriter;
 import java.io.Writer;
@@ -83,11 +83,11 @@ public class CompilerRunner {
 			fileManager = compiler.getStandardFileManager(null, null, null);
 			DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<JavaFileObject>();
 			compilerWriter = new StringWriter(); // compilation output
-			StudentHelperClass.log("Beginning compilation, " + toBeCompiled.size() + " files without dependencies in queue");
+			log("Beginning compilation, " + toBeCompiled.size() + " files without dependencies in queue");
 			if (options != null && options.size() > 0) {
-				StudentHelperClass.log("Compiler options: " + options);
+				log("Compiler options: " + options);
 			} else {
-				StudentHelperClass.log("No compiler options specified");
+				log("No compiler options specified");
 			}
 
 			boolean atLeastOneSucess = false;
@@ -134,12 +134,12 @@ public class CompilerRunner {
 
 		} catch (UnsupportedOperationException e) {
 			System.out.println("Couldn't get the compiler, testing cannot continue.");
-			StudentHelperClass.log(e.toString());
+			log(e.toString());
 		} catch (Exception e) {
-			StudentHelperClass.log(e.toString());
+			log(e.toString());
 			e.printStackTrace();
 		} finally {
-			StudentHelperClass.log(compilerWriter.toString());
+			log(compilerWriter.toString());
 		}
 		System.out.println("Compilation failed.");
 		return false;
@@ -154,7 +154,7 @@ public class CompilerRunner {
 	private boolean compile(final List<String> filenames, DiagnosticCollector<JavaFileObject> diagnostics) {
 		Iterable<? extends JavaFileObject> compilationUnits = fileManager.getJavaFileObjectsFromStrings(filenames);
 		boolean compileSuccess = compiler.getTask(compilerWriter, null, diagnostics, options, null, compilationUnits).call();
-		StudentHelperClass.log((compileSuccess? "Compilation appears to have succeeded for " : "Compilation failed for ") + filenames);
+		log((compileSuccess? "Compilation appears to have succeeded for " : "Compilation failed for ") + filenames);
 		return compileSuccess;
 	}
 
@@ -174,7 +174,7 @@ public class CompilerRunner {
 		for (Diagnostic<? extends JavaFileObject> diagnostic : diagnostics) {
 
 			// skip consecutive identical errors to keep the output cleaner
-			if (StudentHelperClass.getVerbosity() < 2 && diagnostic.getCode() != null
+			if (Logger.getVerbosity() < 2 && diagnostic.getCode() != null
 					&& diagnostic.getCode().equals(previousError)) {
 				sameErrorCounter++;
 				continue;
@@ -190,8 +190,8 @@ public class CompilerRunner {
 
 			// do not show code from test files
 			if (testFileNames.contains(problematicFile)) {
-				StudentHelperClass.log(problematicFile + " is a test class, will not display the full error.");
-				StudentHelperClass.log(String.format("Error on line %d in %s\n", diagnostic.getLineNumber(),
+				log(problematicFile + " is a test class, will not display the full error.");
+				log(String.format("Error on line %d in %s\n", diagnostic.getLineNumber(),
 						diagnostic.toString()));
 				System.out.println("Error in " + problematicFile + ": " + diagnostic.getMessage(null));
 			} else {
@@ -252,8 +252,8 @@ public class CompilerRunner {
 					// etc...
 
 				default:
-					if (StudentHelperClass.getVerbosity() > 1) {
-						StudentHelperClass.log("The error code is " + diagnostic.getCode());
+					if (Logger.getVerbosity() > 1) {
+						log("The error code is " + diagnostic.getCode());
 					}
 					break;
 				}

@@ -1,5 +1,5 @@
 package studenttester.classes;
-
+import static studenttester.classes.Logger.log;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -54,7 +54,7 @@ public class CheckstyleRunner {
 		// save original err as well to suppress Checkstyle errors
 		PrintStream originalErr = System.err;
 		// disable error stream temporarily if verbosity 0
-		if (StudentHelperClass.getVerbosity() == 0) {
+		if (Logger.getVerbosity() == 0) {
 			System.setErr(null);
 		}
 		// capture checkstyle output to a variable
@@ -66,10 +66,10 @@ public class CheckstyleRunner {
 			System.out.println("Running Checkstyle...");
 			com.puppycrawl.tools.checkstyle.Main.main("-c", checkStyleXmlPath, contentRoot.getAbsolutePath());
 		} catch (IOException e1) {
-			StudentHelperClass.log(e1.getMessage());
+			log(e1.getMessage());
 		} catch (SecurityException e) {
 			// checkstyle exit caught
-			StudentHelperClass.log("Checkstyle forced exit successfully caught.");
+			log("Checkstyle forced exit successfully caught.");
 		} finally {
 			StudentHelperClass.enableSystemExit();
 		}
@@ -92,7 +92,7 @@ public class CheckstyleRunner {
 				checkstyleErrors = Integer.parseInt(m.group(1));
 			}
 		} catch (Exception e) {
-			StudentHelperClass.log(e.getMessage());
+			log(e.getMessage());
 		}
 
 		// add data to json if needed

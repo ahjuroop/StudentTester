@@ -1,5 +1,6 @@
 package studenttester.listeners;
 import org.testng.ISuite;
+import static studenttester.classes.Logger.log;
 import org.testng.ISuiteListener;
 
 import studenttester.classes.StudentHelperClass;
@@ -16,7 +17,7 @@ public class MuteListener implements ISuiteListener {
 	 */
 	@Override
 	public final void onStart(final ISuite suite) {
-		StudentHelperClass.log(("Starting suite " + suite.getName() + ", muting output"));
+		log(("Starting suite " + suite.getName() + ", muting output"));
 		StudentHelperClass.muteStdOut();
 	}
 
@@ -25,7 +26,7 @@ public class MuteListener implements ISuiteListener {
 	 */
 	@Override
 	public final void onFinish(final ISuite suite) {
-		StudentHelperClass.log(("Finished suite " + suite.getName() + ", unmuting output"));
+		log(("Finished suite " + suite.getName() + ", unmuting output"));
 		StudentHelperClass.stdoutToErr();
 	}
 }
