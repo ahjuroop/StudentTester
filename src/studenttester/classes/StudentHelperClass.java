@@ -9,6 +9,7 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import java.lang.reflect.Method;
 import java.security.Permission;
+import java.util.Arrays;
 import java.util.List;
 
 import studenttester.enums.TestClassType;
@@ -288,12 +289,14 @@ public final class StudentHelperClass {
 	 * @param src - source folder
 	 * @param filenames - java files
 	 * @param root - root path string
-	 * @param includePaths
+	 * @param includePaths - include relative path in name
 	 */
 	private static void populateFilenames(final File src, final List<String> filenames,
 			final String root, final boolean includePaths) {
 		if (src.isDirectory()) {
-			for (String file : src.list()) {
+			String[] files = src.list();
+			Arrays.sort(files); // sort files to fix test order (somewhat)
+			for (String file : files) {
 				File srcFile = new File(src, file);
 				populateFilenames(srcFile, filenames, root, includePaths);
 			}
@@ -315,16 +318,18 @@ public final class StudentHelperClass {
 	 * @param src - source dir
 	 * @param toBeCompiled - list of java files found
 	 */
-	public static void populateFiles(final File src, final List<File> toBeCompiled) {
+	protected static void populateFiles(final File src, final List<File> toBeCompiled) {
 		if (src.isDirectory()) {
-			for (String file : src.list()) {
+			String[] files = src.list();
+			Arrays.sort(files);
+			for (String file : files) {
 				File srcFile = new File(src, file);
 				populateFiles(srcFile, toBeCompiled);
 			}
 		} else {
 			String fileName = src.getName().toString();
 			if (fileName.endsWith(".java")) {
-				log("Found java file " + src);
+				// Logger.log("Found java file " + src);
 				toBeCompiled.add(src);
 			}
 		}
