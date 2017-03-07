@@ -84,7 +84,8 @@ public class TestNGRunner {
 
 				for (String testClass : testFilenames) {
 					try {
-						Class.forName(StudentHelperClass.filePathToClassPath(testClass)); // confirm the existence of a compiled class
+						// confirm the existence of a compiled class
+						Class.forName(StudentHelperClass.filePathToClassPath(testClass));
 						XmlTest test;
 						List<XmlClass> classes;
 						switch (StudentHelperClass.getClassType(testClass)) {
@@ -95,7 +96,7 @@ public class TestNGRunner {
 							test.setXmlClasses(classes);
 							test.setName(StudentHelperClass.filePathToClassPath(testClass) + " (JUnit)");
 							test.setJunit(true);
-							log(String.format("Found JUnit class %s", testClass));
+							Logger.log(String.format("Found JUnit class %s", testClass));
 							tests.add(test);
 							break;
 						case TESTNG:
@@ -104,15 +105,19 @@ public class TestNGRunner {
 							classes.add(new XmlClass(StudentHelperClass.filePathToClassPath(testClass)));
 							test.setXmlClasses(classes);
 							test.setName(StudentHelperClass.filePathToClassPath(testClass) + " (TestNG)");
-							log(String.format("Found TestNG class %s", testClass));
+							Logger.log(String.format("Found TestNG class %s", testClass));
 							tests.add(test);
 							break;
+						case MIXED:
+							Logger.log(String.format("Class %s contains mixed test annotations!", testClass));
+							Logger.log("Skipping " + testClass);
+							break;
 						default:
-							log("Skipping " + testClass);
+							Logger.log("Skipping " + testClass);
 						}
 					} catch (ClassNotFoundException e) {
-						log(e.toString());
-						log("Class not found: " + testClass);
+						Logger.log(e.toString());
+						Logger.log("Class not found: " + testClass);
 						incompleteTests = true;
 					}
 				}

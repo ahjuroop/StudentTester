@@ -1,6 +1,4 @@
 package studenttester.listeners;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -17,13 +15,12 @@ import org.testng.xml.XmlClass;
 import org.testng.xml.XmlSuite;
 
 import studenttester.annotations.TestContextConfiguration;
-import studenttester.annotations.Gradable;
 import studenttester.classes.Logger;
 import studenttester.classes.StudentHelperClass;
+import studenttester.annotations.Gradable;
 import studenttester.dataclasses.TestResults;
 import studenttester.enums.ReportMode;
 import studenttester.interfaces.IBaseStudentReporter;
-import static studenttester.classes.Logger.log;
 /**
  * Custom reporter class.
  * @author Andres
@@ -49,7 +46,6 @@ public final class StudentReporter implements IReporter, IBaseStudentReporter {
 	 * @return test results
 	 */
 	public TestResults getResults() {
-		
 		return results;
 	}
 
@@ -77,7 +73,7 @@ public final class StudentReporter implements IReporter, IBaseStudentReporter {
 
 				ITestContext tc = sr.getTestContext();
 				if (tc.getCurrentXmlTest().getClasses().size() > 1) {
-					log(String.format("Test context %s contains %d classes. "
+					Logger.log(String.format("Test context %s contains %d classes. "
 							+ "%s will be pulled from %s and it applies "
 							+ "to ALL other classes in this test context.",
 							tc.getName(),
@@ -120,7 +116,7 @@ public final class StudentReporter implements IReporter, IBaseStudentReporter {
 						testsFromContext = tc.getSkippedTests().getAllResults();
 						break;
 					default:
-						log("This should never happen.");
+						Logger.log("This should never happen.");
 						return;
 					}
 					for (ITestResult unitTestResult : testsFromContext) {
@@ -142,9 +138,14 @@ public final class StudentReporter implements IReporter, IBaseStudentReporter {
 							unitTestNotes.add(String.format("FAILURE: %s (%s)",
 									unitTestResult.getName(), unitTestResult.getThrowable().toString()));
 						}
+						if (type == FAILURE) {
+							unitTestNotes.add(String.format("\tStack trace of %s:  %s",
+									unitTestResult.getName(),
+									StudentHelperClass.getStackTraceString(unitTestResult.getThrowable(), unitTestResult.getName())));
+						}
 						if (Logger.getPrivateMessages().containsKey(unitTestResult.getName())) {
-							unitTestNotes.add(String.format("Notes on %s:\n\t- %s\n", unitTestResult.getName(),
-									String.join("\n\t- ", Logger.getPrivateMessages().get(unitTestResult.getName()))));
+							unitTestNotes.add(String.format("\tNotes on %s:\n\t - %s\n", unitTestResult.getName(),
+									String.join("\n\t - ", Logger.getPrivateMessages().get(unitTestResult.getName()))));
 						}
 					}
 				}
@@ -164,14 +165,18 @@ public final class StudentReporter implements IReporter, IBaseStudentReporter {
 							+ "Grade: %.1f%%\n",
 							tc.getPassedTests().getAllResults().size(),
 							// TODO: find shorter solution for this, getAllTestMethods does not take reused tests into account
-							tc.getPassedTests().getAllResults().size() + tc.getFailedTests().getAllResults().size() + tc.getSkippedTests().getAllResults().size(),
+							tc.getPassedTests().getAllResults().size()
+								+ tc.getFailedTests().getAllResults().size()
+								+ tc.getSkippedTests().getAllResults().size(),
 							tc.getFailedTests().getAllResults().size(),
 							tc.getSkippedTests().getAllResults().size(),
 							(passed / total) * 100);
 				} else {
 					output += "Unit tests were run, but no output will be shown.\n";
 				}
-
+				if (conf != null && conf.identifier() > -1) { // if identifier is found, use this instead
+					index = conf.identifier();
+				}
 				// add results to temp class
 				results.addTest(index, tc.getName(), (passed / total) * 100, String.join("\n", unitTestNotes));
 				index++;
@@ -207,17 +212,28 @@ public final class StudentReporter implements IReporter, IBaseStudentReporter {
 		switch (test.getStatus()) {
 		case ITestResult.SUCCESS:
 			if (reportMode == ReportMode.VERBOSE || reportMode == ReportMode.MAXVERBOSE) {
-				str += String.format("SUCCESS: %s\n\t%d msecs, unit test weight: %d units\n", test.getName(),
-						test.getEndMillis() - test.getStartMillis(), testMetadata.weight());
-				str += (testMetadata.description() == null ? "" : String.format("\tDescription: %s\n", testMetadata.description()));
+				str += String.format("SUCCESS: %s\n\t%d msec%s, weight: %d unit%s\n",
+						test.getName(),
+						test.getEndMillis() - test.getStartMillis(),
+						test.getEndMillis() - test.getStartMillis() == 1 ? "" : "s",
+						testMetadata.weight(),
+						testMetadata.weight() == 1 ? "" : "s");
+				str += ((testMetadata.description() == null || testMetadata.description().isEmpty()) ?
+						"" : String.format("\tDescription: %s\n", testMetadata.description()));
 			}
 			break;
 		case ITestResult.FAILURE:
-			str += String.format("FAILURE: %s\n\t%d msecs, unit test weight: %d units\n", test.getName(),
-					test.getEndMillis() - test.getStartMillis(), testMetadata.weight());
-			str += (testMetadata.description() == null ? "" : String.format("\tDescription: %s\n", testMetadata.description()));
+			str += String.format("FAILURE: %s\n\t%d msec%s, weight: %d unit%s\n",
+					test.getName(),
+					test.getEndMillis() - test.getStartMillis(),
+					test.getEndMillis() - test.getStartMillis() == 1 ? "" : "s",
+					testMetadata.weight(),
+					testMetadata.weight() == 1 ? "" : "s");
+			str += ((testMetadata.description() == null || testMetadata.description().isEmpty()) ?
+					"" : String.format("\tDescription: %s\n", testMetadata.description()));
 			str += String.format("\tException type: %s\n", test.getThrowable().getClass());
-			if (testMetadata.printExceptionMessage() || reportMode == ReportMode.VERBOSE  || reportMode == ReportMode.MAXVERBOSE) {
+			if ((testMetadata.printExceptionMessage() || reportMode == ReportMode.VERBOSE  || reportMode == ReportMode.MAXVERBOSE)
+					&& test.getThrowable().getMessage() != null) {
 				str += String.format("\tDetailed information:  %s\n", test.getThrowable().getMessage());
 			}
 			if (test.getThrowable() instanceof SecurityException
@@ -226,15 +242,16 @@ public final class StudentReporter implements IReporter, IBaseStudentReporter {
 						+ "Please remove it to prevent the tester from working abnormally.\n";
 			}
 			if (testMetadata.printStackTrace() || reportMode == ReportMode.MAXVERBOSE) {
-				StringWriter sw = new StringWriter();
-				PrintWriter pw = new PrintWriter(sw);
-				test.getThrowable().printStackTrace(pw);
-				str += String.format("\tStack trace:  %s\n", sw.toString());
+				str += String.format("\tStack trace:  %s", StudentHelperClass.getStackTraceString(test.getThrowable(), test.getName()));
 			}
 			break;
 		case ITestResult.SKIP:
-			str += String.format("SKIPPED: %s\n\tUnit test weight: %d units\n", test.getName(), testMetadata.weight());
-			str += (testMetadata.description() == null ? "" : String.format("\tDescription: %s\n", testMetadata.description()));
+			str += String.format("SKIPPED: %s\n\tWeight: %d unit%s\n",
+					test.getName(),
+					testMetadata.weight(),
+					testMetadata.weight() == 1 ? "" : "s");
+			str += ((testMetadata.description() == null || testMetadata.description().isEmpty()) ?
+					"" : String.format("\tDescription: %s\n", testMetadata.description()));
 			str += String.format("\tTest skipped because:  %s\n", test.getThrowable().toString());
 
 			if (test.getMethod().getGroupsDependedUpon().length > 0) {
@@ -245,12 +262,12 @@ public final class StudentReporter implements IReporter, IBaseStudentReporter {
 			}
 			break;
 		default:
-			log("No such test result code: " + test.getStatus());
+			Logger.log("No such test result code: " + test.getStatus());
 			return null;
 		}
 		if (Logger.getPublicMessages().containsKey(test.getName())) {
-			str += String.format("Notes on %s:\n\t- %s\n", test.getName(),
-					String.join("\n\t- ", Logger.getPublicMessages().get(test.getName())));
+			str += String.format("\tNotes on %s:\n\t - %s\n", test.getName(),
+					String.join("\n\t - ", Logger.getPublicMessages().get(test.getName())));
 		}
 		return str;
 	}
@@ -265,7 +282,7 @@ public final class StudentReporter implements IReporter, IBaseStudentReporter {
 			Method m = test.getMethod().getConstructorOrMethod().getMethod();
 			return (Gradable) m.getAnnotation(Gradable.class);
 		} catch (SecurityException e) {
-			log(e.getMessage());
+			Logger.log(e.getMessage());
 		}
 		return null;
 	}
@@ -287,7 +304,7 @@ public final class StudentReporter implements IReporter, IBaseStudentReporter {
 			}
 			return null;
 		} catch (SecurityException e) {
-			log(e.getMessage());
+			Logger.log(e.getMessage());
 		}
 		return null;
 	}

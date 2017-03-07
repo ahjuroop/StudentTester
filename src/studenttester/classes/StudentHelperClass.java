@@ -11,6 +11,8 @@ import java.lang.reflect.Method;
 import java.security.Permission;
 import java.util.List;
 
+import studenttester.enums.TestClassType;
+
 import static studenttester.classes.Logger.log;
 
 /**
@@ -184,7 +186,7 @@ public final class StudentHelperClass {
 			}
 			in.close();
 			out.close();
-			log("File copied from " + src + " to " + dest);
+			// log("File copied from " + src + " to " + dest);
 		}
 	}
 
@@ -194,6 +196,7 @@ public final class StudentHelperClass {
 	 * @return success
 	 */
 	public static boolean deleteFolder(final File src) {
+		Logger.log("Deleting " + src.getAbsolutePath());
 		if (src.exists()) {
 			File[] files = src.listFiles();
 			if (files != null) {
@@ -201,8 +204,9 @@ public final class StudentHelperClass {
 					if (f.isDirectory()) {
 						deleteFolder(f);
 					} else {
-						log("Deleting " + f.getAbsolutePath());
-						f.delete();
+						if (!f.delete()) {
+							Logger.log("Failed to delete " + f.getAbsolutePath());
+						}
 					}
 				}
 			}
@@ -211,32 +215,60 @@ public final class StudentHelperClass {
 	}
 
 	/**
-	 * Executes a command and returns its stdout.
-	 * @param command - command to execute
-	 * @return stdout of the command
+	 * Builds a stack trace string that breaks on the first occurrence
+	 * of a method name.
+	 * @param throwable object to analyze
+	 * @param breakOn method name to search for and break on.
+	 * @return stack trace string
 	 */
-	/*
-    public static String getOutputFromCommand(final String command) {
-        final int TIMEOUT_AMOUNT = 15;
-        Process proc;
-        StringBuffer output = new StringBuffer();
+	public static String getStackTraceString(final Throwable throwable, final String breakOn) {
+		StackTraceElement[] stack = throwable.getStackTrace();
+		System.err.println(breakOn);
+		String stackTraceString = throwable.getClass().getName() + "\n";
 
-        try {
-            proc = Runtime.getRuntime().exec(command);
-            proc.waitFor(TIMEOUT_AMOUNT, TimeUnit.SECONDS); // wait 15 secs at most before killing
-            BufferedReader reader = new BufferedReader(new InputStreamReader(proc.getInputStream()));
-            String line = "";
-            while ((line = reader.readLine()) != null) {
-                output.append(line + "\n");
-            }
-        } catch (Exception e) {
-            log(e.getMessage());
-        }
+		for (int i = 0; i < stack.length; i++) {
+			stackTraceString += String.format("\t - at %s\n", stack[i].toString());
+			if (stack[i].getMethodName().equals(breakOn)) {
+				stackTraceString += String.format("\t ... %d more\n", stack.length - i);
+				break;
+			}
+		}
+		return stackTraceString;
+	}
 
-        return output.toString();
-    }
+	/**
+	 * Searches for a class in the stack.
+	 * @param throwable object to analyze
+	 * @param className class name to search for and break on.
+	 * @return class is found in the stack
 	 */
+	public static boolean throwableIsFromClass(final Throwable throwable, final String className) {
+		StackTraceElement[] stack = throwable.getStackTrace();
+		for (int i = 0; i < stack.length; i++) {
+			// System.err.println(stack[i].getClassName());
+			if (stack[i].getClassName().equals(className)) {
+				return true;
+			}
+		}
+		return false;
+	}
 
+	/**
+	 * Searches for a classes in the stack.
+	 * @param throwable object to analyze
+	 * @param classNames class names to search for and break on.
+	 * @return class is found in the stack
+	 */
+	public static boolean throwableIsFromClasses(final Throwable throwable, final List<String> classNames) {
+		StackTraceElement[] stack = throwable.getStackTrace();
+		for (int i = 0; i < stack.length; i++) {
+			// System.err.println(stack[i].getClassName());
+			if (classNames.contains(stack[i].getClassName())) {
+				return true;
+			}
+		}
+		return false;
+	}
 
 	/**
 	 * Returns a list of java filenames found in a folder.
@@ -324,17 +356,28 @@ public final class StudentHelperClass {
 	 * @return the type of class.
 	 * @throws ClassNotFoundException when something goes wrong
 	 */
-	public static TEST_CLASS_TYPE getClassType(final String testClassPath) throws ClassNotFoundException {
+	protected static TestClassType getClassType(final String testClassPath) throws ClassNotFoundException {
 		Class<?> classToTest = Class.forName(filePathToClassPath(testClassPath));
-		for (Method unitTest : classToTest.getDeclaredMethods()) {		// if the class contains at least one
-			if (unitTest.isAnnotationPresent(org.junit.Test.class)) {	// JUnit method, assume it's a JUnit test
-				return TEST_CLASS_TYPE.JUNIT;
-			}
-			if (unitTest.isAnnotationPresent(org.testng.annotations.Test.class)) {	// TestNG method, assume it's a TestNG test
-				return TEST_CLASS_TYPE.TESTNG;
+		boolean testNGfound = false, junitFound = false;
+		// if the class contains at least one
+		for (Method unitTest : classToTest.getDeclaredMethods()) {
+			// JUnit method, assume it's a JUnit test
+			if (unitTest.isAnnotationPresent(org.junit.Test.class)) {
+				junitFound = true;
+			// TestNG method, assume it's a TestNG test
+			} else if (unitTest.isAnnotationPresent(org.testng.annotations.Test.class)) {
+				testNGfound = true;
 			}
 		}
-		return TEST_CLASS_TYPE.NOT_TEST_CLASS;
+		if (junitFound && testNGfound) {
+			return TestClassType.MIXED;
+		} else if (junitFound) {
+			return TestClassType.JUNIT;
+		} else if (testNGfound) {
+			return TestClassType.TESTNG;
+		} else {
+			return TestClassType.NOT_TEST_CLASS;
+		}
 	}
 
 	/**

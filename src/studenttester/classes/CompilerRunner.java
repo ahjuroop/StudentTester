@@ -24,7 +24,7 @@ import javax.tools.ToolProvider;
  */
 public class CompilerRunner {
 
-	private List<String> toBeCompiled = new ArrayList<String>();;
+	private List<String> toBeCompiled = new ArrayList<String>();
 	private boolean compileSeparately = false;
 	private File tempDirectory, testRoot;
 	private List<String> options = new ArrayList<String>();

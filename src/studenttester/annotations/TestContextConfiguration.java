@@ -29,4 +29,11 @@ public @interface TestContextConfiguration {
 	 * @return message
 	 */
 	String welcomeMessage() default "";
+	/**
+	 * A number that identifies this test and
+	 * should be unique and non-negative.
+	 * Default value is -1.
+	 * @return indentifier number
+	 */
+	int identifier() default -1;
 }
