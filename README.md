@@ -12,4 +12,31 @@ The prototype scans directories given and recursively finds all files containing
 
 Since the prototype is primarily intended to be used in conjunction with already implemented systems in the IT Faculty of Tallinn University of Technology, it can output compatible JSON-formatted results as well.
 
-For now the documentation will not be included, however, some functionality is described in the program's default output. Try running it with no arguments.
+## How to run
+
+Separate unit tests and testable code into different folders. The unit test folder must be passed as a command line argument ```-testroot``` and testable code as ```-contentroot```. Additional command line arguments can be found by running the jar without arguments.
+
+## Some example usage inside unit tests:
+
+```java
+
+@TestContextConfiguration(mode = ReportMode.VERBOSE, identifier = 12, welcomeMessage = "Hello")
+public class FooTestClass {
+	...
+}
+```
+
+The annotation above, when applied to a test class, will produce a test report that has an introductory message, prints some extra info (such as exception types) and, if JSON output is enabled, the test will have a identifying code 12.
+
+```java
+
+@Gradable(description = "A simple test", weight = 4, printExceptionMessage = true)
+@Test
+static void FooTestMethod {
+	...
+}
+```
+
+The code above will attach a description and the exception message (if exists) to the unit test FooTestMethod. If additional information is required, ```printStackTrace``` may replace ```printExceptionMessage```.
+
+## To be continued...
