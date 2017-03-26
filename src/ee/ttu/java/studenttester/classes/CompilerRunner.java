@@ -1,5 +1,6 @@
-package studenttester.classes;
-import static studenttester.classes.Logger.log;
+package ee.ttu.java.studenttester.classes;
+import static ee.ttu.java.studenttester.classes.Logger.log;
+
 import java.io.File;
 import java.io.StringWriter;
 import java.io.Writer;
@@ -164,18 +165,32 @@ public class CompilerRunner {
 	 * @param diagnostics - list of compilation errors
 	 */
 	private void handleCompilationErrors(final List<Diagnostic<? extends JavaFileObject>> diagnostics) {
+		
+		
 
 		List<String> testFileNames = new ArrayList<String>();
 		StudentHelperClass.populateFilenames(testRoot, testFileNames, false);    // get all test filenames
 
-		String previousError = null;    // store previous error code to hide consecutive errors
-		int sameErrorCounter = 0;       // amount of skipped errors
+		// String previousError = null;    // store previous error code to hide consecutive errors
+		// int sameErrorCounter = 0;       // amount of skipped errors
+		boolean errorsSkipped = false;     // there are skipped errors
+		// replace counting the same error with only one message per error type.
+		// will look nicer than 100 alternating errors.
+		List<String> pastErrors = new ArrayList<String>();
 
 		for (Diagnostic<? extends JavaFileObject> diagnostic : diagnostics) {
 
+			if (pastErrors.contains(diagnostic.getCode())) {
+				log(String.format("Skipping already existing error %s at line %d.\n",
+						diagnostic.getCode(), diagnostic.getLineNumber()));
+				errorsSkipped = true;
+				continue;
+			}
+
+			pastErrors.add(diagnostic.getCode());
+
 			// skip consecutive identical errors to keep the output cleaner
-			if (Logger.getVerbosity() < 2 && diagnostic.getCode() != null
-					&& diagnostic.getCode().equals(previousError)) {
+			/* if (diagnostic.getCode() != null && diagnostic.getCode().equals(previousError)) {
 				sameErrorCounter++;
 				continue;
 			} else {
@@ -186,6 +201,8 @@ public class CompilerRunner {
 			}
 
 			previousError = diagnostic.getCode();
+			*/
+
 			String problematicFile = new File(diagnostic.getSource().getName()).getName();
 
 			// do not show code from test files
@@ -193,14 +210,15 @@ public class CompilerRunner {
 				log(problematicFile + " is a test class, will not display the full error.");
 				log(String.format("Error on line %d in %s\n", diagnostic.getLineNumber(),
 						diagnostic.toString()));
-				System.out.println("Error in " + problematicFile + ": " + diagnostic.getMessage(null));
+				System.out.format("Error on line %d in %s: %s\n",
+						diagnostic.getLineNumber(), problematicFile, diagnostic.getMessage(null));
 			} else {
 				System.out.format("Error on line %d in %s\n", diagnostic.getLineNumber(),
 						diagnostic.toString().replace(tempDirectory.getAbsolutePath(), ""));
 			}
 
 			// simple switch statement to provide hints to common compilation problems
-			if (sameErrorCounter == 0 && diagnostic.getCode() != null) {
+			if (/* sameErrorCounter == 0 && */ diagnostic.getCode() != null) {
 				switch (diagnostic.getCode()) {
 				case "compiler.err.cant.resolve.location.args":
 					System.out.println("Hint: does the method exist?");
@@ -259,9 +277,15 @@ public class CompilerRunner {
 				}
 			}
 		}
+		if (errorsSkipped) {
+			System.out.println("Skipped some errors of the same type. "
+					+ "Try fixing the ones mentioned above first and check if the problem persists.");
+		}
+		/*
 		if (sameErrorCounter > 0) {
 			System.out.println("Skipped " + sameErrorCounter + " error(s) of the same type.");
 		}
+		*/
 		System.out.println();
 	}
 }

@@ -1,4 +1,4 @@
-package studenttester.enums;
+package ee.ttu.java.studenttester.enums;
 
 /**
  * Global verbosity settings.

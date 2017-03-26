@@ -1,4 +1,4 @@
-package studenttester.classes;
+package ee.ttu.java.studenttester.classes;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;

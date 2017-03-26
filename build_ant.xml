@@ -27,7 +27,7 @@
 		<jar destfile="build/${ant.project.name}-${version-number}.jar" basedir="bin/">
 			<zipgroupfileset dir="lib" includes="*.jar"/>
 			<manifest>
-				<attribute name="Main-Class" value="studenttester.classes.StudentTesterMain"/>
+				<attribute name="Main-Class" value="ee.ttu.java.studenttester.classes.StudentTesterMain"/>
 				<attribute name="Built-By" value="${computer.hostname}" />
 				<attribute name="Built-On" value="${build-info.current-date}" />
 				<attribute name="Built-At" value="${build-info.current-time}" />

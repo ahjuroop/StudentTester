@@ -1,5 +1,5 @@
-package studenttester.interfaces;
-import studenttester.dataclasses.TestResults;
+package ee.ttu.java.studenttester.interfaces;
+import ee.ttu.java.studenttester.dataclasses.TestResults;
 
 /**
  * Interface for TestNG reporters communicating with the tester.

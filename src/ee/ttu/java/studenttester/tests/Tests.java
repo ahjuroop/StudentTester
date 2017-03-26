@@ -1,4 +1,4 @@
-package tests;
+package ee.ttu.java.studenttester.tests;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
@@ -14,7 +14,7 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-import studenttester.classes.StudentTesterClass;
+import ee.ttu.java.studenttester.classes.StudentTesterClass;
 
 import javax.json.Json;
 import javax.json.JsonObject;
@@ -245,8 +245,8 @@ public class Tests {
 
 		testFileWriter.write(String.format("import org.testng.annotations.Test;"
 				+ "import org.testng.Assert;"
-				+ "import studenttester.annotations.*;"
-				+ "import studenttester.enums.*;"
+				+ "import ee.ttu.java.studenttester.annotations.*;"
+				+ "import ee.ttu.java.studenttester.enums.*;"
 				+ "@TestContextConfiguration(mode = ReportMode.MUTED)\r\n"
 				+ "public class StudentReporterTest%1$s {"
 				+  "%2$s"

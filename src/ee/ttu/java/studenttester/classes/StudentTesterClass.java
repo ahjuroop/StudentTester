@@ -1,7 +1,10 @@
-package studenttester.classes;
+package ee.ttu.java.studenttester.classes;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+
+import static ee.ttu.java.studenttester.classes.Logger.log;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -15,7 +18,6 @@ import java.util.Set;
 import javax.json.Json;
 import javax.json.JsonArrayBuilder;
 import javax.json.JsonObjectBuilder;
-import static studenttester.classes.Logger.log;
 /**
  *
  * @author Andres
@@ -367,7 +369,7 @@ public class StudentTesterClass {
 	 * Sets the compiler options.
 	 * @param options - information to be passed to the compiler
 	 */
-	public final void setCompilerOptions(String options) {
+	public final void setCompilerOptions(final String options) {
 		this.compilerOptions = options;
 	}
 

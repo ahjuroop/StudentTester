@@ -1,5 +1,6 @@
-package studenttester.classes;
-import static studenttester.classes.Logger.log;
+package ee.ttu.java.studenttester.classes;
+import static ee.ttu.java.studenttester.classes.Logger.log;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -22,11 +23,11 @@ import org.testng.xml.XmlClass;
 import org.testng.xml.XmlSuite;
 import org.testng.xml.XmlTest;
 
-import studenttester.dataclasses.SingleTest;
-import studenttester.dataclasses.TestResults;
-import studenttester.interfaces.IBaseStudentReporter;
-import studenttester.listeners.MuteListener;
-import studenttester.listeners.StudentReporter;
+import ee.ttu.java.studenttester.dataclasses.SingleTest;
+import ee.ttu.java.studenttester.dataclasses.TestResults;
+import ee.ttu.java.studenttester.interfaces.IBaseStudentReporter;
+import ee.ttu.java.studenttester.listeners.MuteListener;
+import ee.ttu.java.studenttester.listeners.StudentReporter;
 
 public class TestNGRunner {
 

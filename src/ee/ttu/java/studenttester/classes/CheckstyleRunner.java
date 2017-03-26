@@ -1,5 +1,6 @@
-package studenttester.classes;
-import static studenttester.classes.Logger.log;
+package ee.ttu.java.studenttester.classes;
+import static ee.ttu.java.studenttester.classes.Logger.log;
+
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;

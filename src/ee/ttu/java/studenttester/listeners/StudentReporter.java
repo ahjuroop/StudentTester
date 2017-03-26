@@ -1,10 +1,12 @@
-package studenttester.listeners;
+package ee.ttu.java.studenttester.listeners;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.testng.IReporter;
 import org.testng.ISuite;
@@ -14,13 +16,14 @@ import org.testng.ITestResult;
 import org.testng.xml.XmlClass;
 import org.testng.xml.XmlSuite;
 
-import studenttester.annotations.TestContextConfiguration;
-import studenttester.classes.Logger;
-import studenttester.classes.StudentHelperClass;
-import studenttester.annotations.Gradable;
-import studenttester.dataclasses.TestResults;
-import studenttester.enums.ReportMode;
-import studenttester.interfaces.IBaseStudentReporter;
+import ee.ttu.java.studenttester.annotations.Gradable;
+import ee.ttu.java.studenttester.annotations.TestContextConfiguration;
+import ee.ttu.java.studenttester.classes.Logger;
+import ee.ttu.java.studenttester.classes.StudentHelperClass;
+import ee.ttu.java.studenttester.dataclasses.SingleTest;
+import ee.ttu.java.studenttester.dataclasses.TestResults;
+import ee.ttu.java.studenttester.enums.ReportMode;
+import ee.ttu.java.studenttester.interfaces.IBaseStudentReporter;
 /**
  * Custom reporter class.
  * @author Andres
@@ -62,15 +65,15 @@ public final class StudentReporter implements IReporter, IBaseStudentReporter {
 		int index = 1; // test counter for json
 		double overallTotal = 0; // overall total score
 		double overallPassed = 0; // overall passed score
-		String output = ""; // test output string
+		String globalOutput = ""; // test output string
 
 		for (ISuite suite : suites) {
 
-			output += String.format("Test suite \"%s\"\n", suite.getName());
+			// globalOutput += String.format("Test suite \"%s\"\n", suite.getName());
 			Map<String, ISuiteResult> suiteResults = suite.getResults();
 
 			for (ISuiteResult sr : suiteResults.values()) {
-
+				String localOutput = "";
 				ITestContext tc = sr.getTestContext();
 				if (tc.getCurrentXmlTest().getClasses().size() > 1) {
 					Logger.log(String.format("Test context %s contains %d classes. "
@@ -90,12 +93,25 @@ public final class StudentReporter implements IReporter, IBaseStudentReporter {
 					reportMode = ReportMode.NORMAL;
 				}
 
-				output += "\n ---";
-				output += String.format("\n%s\n%s\n", tc.getName(), tc.getEndDate());
-				if (conf != null && !conf.welcomeMessage().isEmpty()) {
-					output += String.format("%s\n", conf.welcomeMessage());
+				if (conf != null && conf.identifier() > -1) { // if identifier is found, use this instead
+					if (results.getResultList() // also check for clashing
+							.stream()
+							.map(SingleTest::getCode)
+							.collect(Collectors.toList())
+							.contains(conf.identifier())) {
+						Logger.log(tc.getCurrentXmlTest().getClasses().get(0).getName()
+								+ " clashes with already existing identifier " + conf.identifier());
+						return;
+					}
+					index = conf.identifier();
 				}
-				output += " ---\n";
+
+				localOutput += "\n ---";
+				localOutput += String.format("\n%s\n%s\n", tc.getName(), tc.getEndDate());
+				if (conf != null && !conf.welcomeMessage().isEmpty()) {
+					localOutput += String.format("%s\n", conf.welcomeMessage());
+				}
+				localOutput += " ---\n";
 
 				double total = 0;
 				double passed = 0;
@@ -122,13 +138,13 @@ public final class StudentReporter implements IReporter, IBaseStudentReporter {
 					for (ITestResult unitTestResult : testsFromContext) {
 						Gradable testMetadata = getTestMetadata(unitTestResult);
 						if (testMetadata != null) {
-							output += (getTestReportString(unitTestResult, testMetadata));
+							localOutput += (getTestReportString(unitTestResult, testMetadata));
 							if (type == SUCCESS) {
 								passed += testMetadata.weight();
 							}
 							total += testMetadata.weight();
 						} else {
-							output += (getTestReportString(unitTestResult, getMockAnnotation()));
+							localOutput += (getTestReportString(unitTestResult, getMockAnnotation()));
 							if (type == SUCCESS) {
 								passed += getMockAnnotation().weight();
 							}
@@ -141,7 +157,7 @@ public final class StudentReporter implements IReporter, IBaseStudentReporter {
 						if (type == FAILURE) {
 							unitTestNotes.add(String.format("\tStack trace of %s:  %s",
 									unitTestResult.getName(),
-									StudentHelperClass.getStackTraceString(unitTestResult.getThrowable(), unitTestResult.getName())));
+									StudentHelperClass.getStackTraceString(unitTestResult.getThrowable(), unitTestResult.getName().split(" ")[0])));
 						}
 						if (Logger.getPrivateMessages().containsKey(unitTestResult.getName())) {
 							unitTestNotes.add(String.format("\tNotes on %s:\n\t - %s\n", unitTestResult.getName(),
@@ -159,7 +175,7 @@ public final class StudentReporter implements IReporter, IBaseStudentReporter {
 				}
 
 				if (reportMode != ReportMode.MUTED) {
-					output += String.format("\nPassed unit tests: %d/%d\n"
+					localOutput += String.format("\nPassed unit tests: %d/%d\n"
 							+ "Failed unit tests: %d\n"
 							+ "Skipped unit tests: %d\n"
 							+ "Grade: %.1f%%\n",
@@ -172,13 +188,12 @@ public final class StudentReporter implements IReporter, IBaseStudentReporter {
 							tc.getSkippedTests().getAllResults().size(),
 							(passed / total) * 100);
 				} else {
-					output += "Unit tests were run, but no output will be shown.\n";
+					localOutput += "Unit tests were run, but no output will be shown.\n";
 				}
-				if (conf != null && conf.identifier() > -1) { // if identifier is found, use this instead
-					index = conf.identifier();
-				}
+
 				// add results to temp class
-				results.addTest(index, tc.getName(), (passed / total) * 100, String.join("\n", unitTestNotes));
+				
+				results.addTest(index, tc.getName(), (passed / total) * 100, String.join("\n", unitTestNotes), localOutput);
 				index++;
 			}
 		}
@@ -187,21 +202,32 @@ public final class StudentReporter implements IReporter, IBaseStudentReporter {
 			overallTotal = 1;
 		}
 
+		Collections.sort(results.getResultList());
+
+		globalOutput += results.getResultList()
+				.stream()
+				.map(SingleTest::getOutput)
+				.collect(Collectors.joining());
+
 		if (reportMode != ReportMode.MUTED) {
-			output += String.format("\nOverall grade: %.1f%%\n", (overallPassed / overallTotal) * 100);
+			globalOutput += String.format("\nOverall grade: %.1f%%\n", (overallPassed / overallTotal) * 100);
 		}
 		// global results to object
-		results.setStudentOutput(output);
+		results.setStudentOutput(globalOutput);
 		results.setPercent((overallPassed / overallTotal) * 100);
 	}
 
 	/**
 	 * Prints the results of a single unit test.
-	 * @param test - the unit test object
+	 * @param unitTest - the unit test object
 	 * @param testMetadata - annotations
 	 * @return friendly string
 	 */
-	private String getTestReportString(final ITestResult test, Gradable testMetadata) {
+	private String getTestReportString(final ITestResult unitTest, Gradable testMetadata) {
+
+		// JUnit tests return the method name in a weird format. Fix it
+		String cleanName = unitTest.getName().split(" ")[0];
+
 		if (reportMode == ReportMode.MUTED || reportMode == ReportMode.ANONYMOUS) {
 			return "";
 		}
@@ -209,13 +235,13 @@ public final class StudentReporter implements IReporter, IBaseStudentReporter {
 			testMetadata = getMockAnnotation();
 		}
 		String str = "";
-		switch (test.getStatus()) {
+		switch (unitTest.getStatus()) {
 		case ITestResult.SUCCESS:
 			if (reportMode == ReportMode.VERBOSE || reportMode == ReportMode.MAXVERBOSE) {
 				str += String.format("SUCCESS: %s\n\t%d msec%s, weight: %d unit%s\n",
-						test.getName(),
-						test.getEndMillis() - test.getStartMillis(),
-						test.getEndMillis() - test.getStartMillis() == 1 ? "" : "s",
+						cleanName,
+						unitTest.getEndMillis() - unitTest.getStartMillis(),
+						unitTest.getEndMillis() - unitTest.getStartMillis() == 1 ? "" : "s",
 						testMetadata.weight(),
 						testMetadata.weight() == 1 ? "" : "s");
 				str += ((testMetadata.description() == null || testMetadata.description().isEmpty()) ?
@@ -224,50 +250,50 @@ public final class StudentReporter implements IReporter, IBaseStudentReporter {
 			break;
 		case ITestResult.FAILURE:
 			str += String.format("FAILURE: %s\n\t%d msec%s, weight: %d unit%s\n",
-					test.getName(),
-					test.getEndMillis() - test.getStartMillis(),
-					test.getEndMillis() - test.getStartMillis() == 1 ? "" : "s",
+					cleanName,
+					unitTest.getEndMillis() - unitTest.getStartMillis(),
+					unitTest.getEndMillis() - unitTest.getStartMillis() == 1 ? "" : "s",
 					testMetadata.weight(),
 					testMetadata.weight() == 1 ? "" : "s");
 			str += ((testMetadata.description() == null || testMetadata.description().isEmpty()) ?
 					"" : String.format("\tDescription: %s\n", testMetadata.description()));
-			str += String.format("\tException type: %s\n", test.getThrowable().getClass());
+			str += String.format("\tException type: %s\n", unitTest.getThrowable().getClass());
 			if ((testMetadata.printExceptionMessage() || reportMode == ReportMode.VERBOSE  || reportMode == ReportMode.MAXVERBOSE)
-					&& test.getThrowable().getMessage() != null) {
-				str += String.format("\tDetailed information:  %s\n", test.getThrowable().getMessage());
+					&& unitTest.getThrowable().getMessage() != null) {
+				str += String.format("\tDetailed information:  %s\n", unitTest.getThrowable().getMessage());
 			}
-			if (test.getThrowable() instanceof SecurityException
-					&& test.getThrowable().getMessage().equals(StudentHelperClass.EXITVM_MSG)) {
+			if (unitTest.getThrowable() instanceof SecurityException
+					&& unitTest.getThrowable().getMessage().equals(StudentHelperClass.EXITVM_MSG)) {
 				str += "\tWarning: It seems that System.exit() is used in the code. "
 						+ "Please remove it to prevent the tester from working abnormally.\n";
 			}
 			if (testMetadata.printStackTrace() || reportMode == ReportMode.MAXVERBOSE) {
-				str += String.format("\tStack trace:  %s", StudentHelperClass.getStackTraceString(test.getThrowable(), test.getName()));
+				str += String.format("\tStack trace:  %s", StudentHelperClass.getStackTraceString(unitTest.getThrowable(), cleanName));
 			}
 			break;
 		case ITestResult.SKIP:
 			str += String.format("SKIPPED: %s\n\tWeight: %d unit%s\n",
-					test.getName(),
+					cleanName,
 					testMetadata.weight(),
 					testMetadata.weight() == 1 ? "" : "s");
 			str += ((testMetadata.description() == null || testMetadata.description().isEmpty()) ?
 					"" : String.format("\tDescription: %s\n", testMetadata.description()));
-			str += String.format("\tTest skipped because:  %s\n", test.getThrowable().toString());
+			str += String.format("\tTest skipped because:  %s\n", unitTest.getThrowable().toString());
 
-			if (test.getMethod().getGroupsDependedUpon().length > 0) {
-				str += String.format("\tThis unit test depends on groups: %s\n", String.join(", ", test.getMethod().getGroupsDependedUpon()));
+			if (unitTest.getMethod().getGroupsDependedUpon().length > 0) {
+				str += String.format("\tThis unit test depends on groups: %s\n", String.join(", ", unitTest.getMethod().getGroupsDependedUpon()));
 			}
-			if (test.getMethod().getMethodsDependedUpon().length > 0) {
-				str += String.format("\tThis unit test depends on tests: %s\n", String.join(", ", test.getMethod().getMethodsDependedUpon()));
+			if (unitTest.getMethod().getMethodsDependedUpon().length > 0) {
+				str += String.format("\tThis unit test depends on tests: %s\n", String.join(", ", unitTest.getMethod().getMethodsDependedUpon()));
 			}
 			break;
 		default:
-			Logger.log("No such test result code: " + test.getStatus());
+			Logger.log("No such test result code: " + unitTest.getStatus());
 			return null;
 		}
-		if (Logger.getPublicMessages().containsKey(test.getName())) {
-			str += String.format("\tNotes on %s:\n\t - %s\n", test.getName(),
-					String.join("\n\t - ", Logger.getPublicMessages().get(test.getName())));
+		if (Logger.getPublicMessages().containsKey(unitTest.getName())) {
+			str += String.format("\tNotes on %s:\n\t - %s\n", cleanName,
+					String.join("\n\t - ", Logger.getPublicMessages().get(unitTest.getName())));
 		}
 		return str;
 	}

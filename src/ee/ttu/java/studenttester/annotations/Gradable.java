@@ -1,4 +1,4 @@
-package studenttester.annotations;
+package ee.ttu.java.studenttester.annotations;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;

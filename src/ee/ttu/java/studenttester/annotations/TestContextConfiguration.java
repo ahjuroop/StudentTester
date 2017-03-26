@@ -1,4 +1,4 @@
-package studenttester.annotations;
+package ee.ttu.java.studenttester.annotations;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
@@ -7,7 +7,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import studenttester.enums.ReportMode;
+import ee.ttu.java.studenttester.enums.ReportMode;
 
 /**
  * Annotation for defining some global class settings.

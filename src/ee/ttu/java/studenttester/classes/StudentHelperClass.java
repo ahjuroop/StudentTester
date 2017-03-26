@@ -1,4 +1,6 @@
-package studenttester.classes;
+package ee.ttu.java.studenttester.classes;
+import static ee.ttu.java.studenttester.classes.Logger.log;
+
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -12,9 +14,7 @@ import java.security.Permission;
 import java.util.Arrays;
 import java.util.List;
 
-import studenttester.enums.TestClassType;
-
-import static studenttester.classes.Logger.log;
+import ee.ttu.java.studenttester.enums.TestClassType;
 
 /**
  * Helper class for common functions.
@@ -63,13 +63,6 @@ public final class StudentHelperClass {
 	 * Exception message that SecurityException will use and StudentReporter must recognize.
 	 */
 	public static final String EXITVM_MSG = "exitVM call caught";
-
-	/**
-	 * Stores possible unit test class types.
-	 * @author Andres
-	 *
-	 */
-	public enum TEST_CLASS_TYPE { TESTNG, JUNIT, NOT_TEST_CLASS };
 
 	/**
 	 * Checks if any of the objects in the arguments are null.
@@ -224,9 +217,7 @@ public final class StudentHelperClass {
 	 */
 	public static String getStackTraceString(final Throwable throwable, final String breakOn) {
 		StackTraceElement[] stack = throwable.getStackTrace();
-		System.err.println(breakOn);
 		String stackTraceString = throwable.getClass().getName() + "\n";
-
 		for (int i = 0; i < stack.length; i++) {
 			stackTraceString += String.format("\t - at %s\n", stack[i].toString());
 			if (stack[i].getMethodName().equals(breakOn)) {

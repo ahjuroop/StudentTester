@@ -1,4 +1,4 @@
-package studenttester.dataclasses;
+package ee.ttu.java.studenttester.dataclasses;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -44,7 +44,7 @@ public class TestResults {
 	 * @param percentage - test percentage
 	 */
 	public final void addTest(final int code, final String name, final double percentage) {
-		resultList.add(new SingleTest(code, name, percentage, null));
+		resultList.add(new SingleTest(code, name, percentage, null, null));
 	}
 
 	/**
@@ -52,10 +52,11 @@ public class TestResults {
 	 * @param code - test number
 	 * @param name - test name
 	 * @param percentage - test percentage
-	 * @param output - diagnostic output
+	 * @param errorOutput - diagnostic output
 	 */
-	public final void addTest(final int code, final String name, final double percentage, final String output) {
-		resultList.add(new SingleTest(code, name, percentage, output));
+	public final void addTest(final int code, final String name,
+			final double percentage, final String errorOutput, final String studentOutput) {
+		resultList.add(new SingleTest(code, name, percentage, errorOutput, studentOutput));
 	}
 
 	/**
@@ -64,8 +65,9 @@ public class TestResults {
 	 * @param name - test name
 	 * @param output - diagnostic output
 	 */
-	public final void addTest(final int code, final String name, final String output) {
-		resultList.add(new SingleTest(code, name, Double.NaN, output));
+	public final void addTest(final int code, final String name,
+			final String errorOutput, final String studentOutput) {
+		resultList.add(new SingleTest(code, name, Double.NaN, errorOutput, studentOutput));
 	}
 
 }

@@ -1,9 +1,10 @@
-package studenttester.listeners;
+package ee.ttu.java.studenttester.listeners;
+import static ee.ttu.java.studenttester.classes.Logger.log;
+
 import org.testng.ISuite;
-import static studenttester.classes.Logger.log;
 import org.testng.ISuiteListener;
 
-import studenttester.classes.StudentHelperClass;
+import ee.ttu.java.studenttester.classes.StudentHelperClass;
 
 /**
  * Listener that suppresses the output of student's code.
