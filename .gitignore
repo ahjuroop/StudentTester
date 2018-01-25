@@ -1,3 +1,10 @@
 bin/
+out/
 .gradle/
+gradle/
+.idea/
+idea/
 build/
+settings.gradle
+.classpath
+.project

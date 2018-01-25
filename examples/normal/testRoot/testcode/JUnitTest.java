@@ -5,9 +5,9 @@ import static org.junit.Assert.*;
 import org.junit.Test;
 
 import studentcode.StudentTesterExample;
-import studenttester.annotations.Gradable;
-import studenttester.annotations.TestContextConfiguration;
-import studenttester.enums.ReportMode;
+import ee.ttu.java.studenttester.annotations.Gradable;
+import ee.ttu.java.studenttester.annotations.TestContextConfiguration;
+import ee.ttu.java.studenttester.enums.ReportMode;
 
 @TestContextConfiguration(mode = ReportMode.VERBOSE, welcomeMessage = "This file for demonstration purposes only.")
 public class JUnitTest {
