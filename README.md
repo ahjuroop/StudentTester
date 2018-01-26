@@ -1,6 +1,6 @@
 # StudentTester
 
-[Binary releases here](https://drive.google.com/open?id=0B3eDkXG2UC2tS1JRUi1Dc1dmQ28)
+[Binary releases here](https://drive.google.com/open?id=0B3eDkXG2UC2tS1JRUi1Dc1dmQ28) (old releases, do not use)
 
 The result of my thesis is a prototype codenamed StudentTester that uses the Java programming language to test code.
 
@@ -12,9 +12,16 @@ The prototype scans directories given and recursively finds all files containing
 
 Since the prototype is primarily intended to be used in conjunction with already implemented systems in the IT Faculty of Tallinn University of Technology, it can output compatible JSON-formatted results as well.
 
-## How to run
+## Requirements
+
+- JDK 9
+- newer Gradle with Java 9 support
+
+## How to build/run
 
 Separate unit tests and testable code into different folders. The unit test folder must be passed as a command line argument ```-testroot``` and testable code as ```-contentroot```. Additional command line arguments can be found by running the jar without arguments.
+
+Use common Gradle commands such as ```gradle build```, ```gradle test``` and ```gradle run```. To pass arguments to main(), use a command such as ```gradle run -Pconf='-contentroot examples/normal/contentRoot -testroot examples/normal/testRoot'```. As this generates some overhead, you can also build a JAR file with all dependencies (```gradle jar```) and use it directly in your JDK 9 environment. If you get an error about a missing compiler, you might want to ensure ```JAVA_HOME``` environment variable points to JDK 9 installation folder. You might also need to launch the java executable using its absolute path.
 
 ## Some example usage inside unit tests:
 
