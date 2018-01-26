@@ -328,7 +328,7 @@ public final class StudentHelperClass {
 	 * @return relative path (some/path/file.java)
 	 */
 	public static String classPathToFilePath(final String classPath) {
-		return classPath.replace(".", File.separator) + ". java";
+		return classPath.replace(".", File.separator) + ".java";
 	}
 
 	/**

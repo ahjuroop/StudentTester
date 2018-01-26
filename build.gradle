@@ -1,5 +1,5 @@
 group 'ee.ttu.studenttester'
-version '1.3'
+version = '1.3'
 
 apply plugin: 'java'
 apply plugin: 'application'
@@ -26,20 +26,34 @@ dependencies {
     compile group: 'junit', name: 'junit', version: '4.12'
 
     // Use TestNG test framework
-    testImplementation 'org.testng:testng:6.11'
+    testImplementation 'org.testng:testng:6.13'
 }
+
+// EXAMPLE: gradle run -Pconf='-contentroot examples/normal/contentRoot -testroot examples/normal/testRoot'
 
 run {
     if (project.hasProperty('conf')) {
         args(conf.split(' '))
     }
-
 }
 
 test {
     useTestNG()
-
     beforeTest { descriptor ->
         logger.lifecycle("Running test: " + descriptor)
+    }
+}
+
+jar {
+    manifest {
+        attributes 'Main-Class': mainClassName,
+                   'Implementation-Title': 'StudentTester',
+                   'Implementation-Version': version + ', build ' + new Date().format('yyyyMMdd_HHmmss'),
+                   'Built-By': System.getProperty("user.name")
+    }
+    from { 
+        configurations.runtime.collect { it.isDirectory() ? it : zipTree(it) } } {
+        // signatures must be removed to create a fat jar
+        exclude 'META-INF/*.RSA', 'META-INF/*.SF', 'META-INF/*.DSA'
     }
 }
