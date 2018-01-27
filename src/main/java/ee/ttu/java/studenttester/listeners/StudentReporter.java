@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import ee.ttu.java.studenttester.annotations.Gradeable;
 import ee.ttu.java.studenttester.classes.StudentSec;
 import org.testng.IReporter;
 import org.testng.ISuite;
@@ -17,7 +18,6 @@ import org.testng.ITestResult;
 import org.testng.xml.XmlClass;
 import org.testng.xml.XmlSuite;
 
-import ee.ttu.java.studenttester.annotations.Gradable;
 import ee.ttu.java.studenttester.annotations.TestContextConfiguration;
 import ee.ttu.java.studenttester.classes.Logger;
 import ee.ttu.java.studenttester.classes.StudentHelperClass;
@@ -176,7 +176,7 @@ public final class StudentReporter implements IReporter, IBaseStudentReporter {
 						return;
 					}
 					for (ITestResult unitTestResult : testsFromContext) {
-						Gradable testMetadata = getTestMetadata(unitTestResult);
+						Gradeable testMetadata = getTestMetadata(unitTestResult);
 						if (testMetadata != null) {
 							localOutput += (getTestReportString(unitTestResult, testMetadata));
 							if (type == SUCCESS) {
@@ -265,7 +265,7 @@ public final class StudentReporter implements IReporter, IBaseStudentReporter {
 	 * @param testMetadata - annotations
 	 * @return friendly string
 	 */
-	private String getTestReportString(final ITestResult unitTest, Gradable testMetadata) {
+	private String getTestReportString(final ITestResult unitTest, Gradeable testMetadata) {
 
 		// JUnit tests return the method name in a weird format. Fix it
 		String cleanName = unitTest.getName().split(" ")[0];
@@ -345,10 +345,10 @@ public final class StudentReporter implements IReporter, IBaseStudentReporter {
 	 * @param test - unit test to get the metadata from
 	 * @return annotation data if found
 	 */
-	private Gradable getTestMetadata(final ITestResult test) {
+	private Gradeable getTestMetadata(final ITestResult test) {
 		try {
 			Method m = test.getMethod().getConstructorOrMethod().getMethod();
-			return (Gradable) m.getAnnotation(Gradable.class);
+			return (Gradeable) m.getAnnotation(Gradeable.class);
 		} catch (SecurityException e) {
 			Logger.log(e.getMessage());
 		}
@@ -381,12 +381,12 @@ public final class StudentReporter implements IReporter, IBaseStudentReporter {
 	 * Mock annotation for unit tests that don't have one.
 	 * @return default annotation for tests
 	 */
-	private Gradable getMockAnnotation() {
-		Gradable annotation = new Gradable() {
+	private Gradeable getMockAnnotation() {
+		Gradeable annotation = new Gradeable() {
 
 			@Override
 			public Class<? extends Annotation> annotationType() {
-				return Gradable.class;
+				return Gradeable.class;
 			}
 
 			@Override

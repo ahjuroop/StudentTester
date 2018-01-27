@@ -4,7 +4,7 @@ import org.testng.Assert;
 import org.testng.annotations.Test;
 
 import studentcode.StudentTesterExample;
-import ee.ttu.java.studenttester.annotations.Gradable;
+import ee.ttu.java.studenttester.annotations.Gradeable;
 import ee.ttu.java.studenttester.annotations.TestContextConfiguration;
 import ee.ttu.java.studenttester.enums.ReportMode;
 
@@ -30,25 +30,25 @@ public class TestNGTest1 {
 		StudentTesterExample.crashHorribly();
 	}
 
-	@Gradable(printExceptionMessage = true)
+	@Gradeable(printExceptionMessage = true)
 	@Test(timeOut = 500)
 	public void testHangHorribly() {
 		StudentTesterExample.hangHorribly();
 	}
 
-	@Gradable(description = "This is an annotated TestNG test. I should be visible in the report.")
+	@Gradeable(description = "This is an annotated TestNG test. I should be visible in the report.")
 	@Test
 	public void testSucceedAnnotation() {
 		Assert.assertEquals(se.addNumbers(2, 3), 5);
 	}
 
-	@Gradable(weight = 50)
+	@Gradeable(weight = 50)
 	@Test
 	public void testSucceedWeightedAnnotation() {
 		Assert.assertEquals(se.addNumbers(2, 3), 5);
 	}
 	
-	@Gradable(printStackTrace = true, weight = 40)
+	@Gradeable(printStackTrace = true, weight = 40)
 	@Test
 	public void testCrashHorriblyWithStacktrace() {
 		StudentTesterExample.crashHorribly();

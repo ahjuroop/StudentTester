@@ -37,7 +37,7 @@ The annotation above, when applied to a test class, will produce a test report t
 
 ```java
 
-@Gradable(description = "A simple test", weight = 4, printExceptionMessage = true)
+@Gradeable(description = "A simple test", weight = 4, printExceptionMessage = true)
 @Test
 static void FooTestMethod {
 	...

@@ -5,7 +5,7 @@ import static org.junit.Assert.*;
 import org.junit.Test;
 
 import studentcode.StudentTesterExample;
-import ee.ttu.java.studenttester.annotations.Gradable;
+import ee.ttu.java.studenttester.annotations.Gradeable;
 import ee.ttu.java.studenttester.annotations.TestContextConfiguration;
 import ee.ttu.java.studenttester.enums.ReportMode;
 
@@ -31,25 +31,25 @@ public class JUnitTest {
 		StudentTesterExample.crashHorribly();
 	}
 
-	@Gradable(printExceptionMessage = true)
+	@Gradeable(printExceptionMessage = true)
 	@Test(timeout = 500)
 	public void testHangHorribly() {
 		StudentTesterExample.hangHorribly();
 	}
 	
-	@Gradable(description = "This is an annotated JUnit test. I should be visible in the report.")
+	@Gradeable(description = "This is an annotated JUnit test. I should be visible in the report.")
 	@Test
 	public void testSucceedAnnotation() {
 		assertEquals(5, se.addNumbers(2, 3));
 	}
 
-	@Gradable(weight = 500)
+	@Gradeable(weight = 500)
 	@Test
 	public void testSucceedWeightedAnnotation() {
 		assertEquals(5, se.addNumbers(2, 3));
 	}
 	
-	@Gradable(printStackTrace = true)
+	@Gradeable(printStackTrace = true)
 	@Test
 	public void testCrashHorriblyWithStacktrace() {
 		StudentTesterExample.crashHorribly();

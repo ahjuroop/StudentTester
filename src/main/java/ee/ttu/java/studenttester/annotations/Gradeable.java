@@ -16,7 +16,7 @@ import java.lang.annotation.Target;
 @Target(ElementType.METHOD)
 @Inherited
 @Retention(RetentionPolicy.RUNTIME)
-public @interface Gradable {
+public @interface Gradeable {
 	/**
 	 * Field for test weight.
 	 * @return default weight 1
