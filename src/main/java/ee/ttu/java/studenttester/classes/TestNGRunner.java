@@ -1,7 +1,6 @@
 package ee.ttu.java.studenttester.classes;
-import static ee.ttu.java.studenttester.classes.Logger.log;
+import static ee.ttu.java.studenttester.classes.StudentLogger.log;
 
-import java.io.Console;
 import java.io.File;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -14,6 +13,8 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import ee.ttu.java.studenttester.enums.StudentPolicy;
+import ee.ttu.java.studenttester.exceptions.StudentTesterException;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.testng.IReporter;
@@ -35,13 +36,15 @@ import ee.ttu.java.studenttester.listeners.StudentReporter;
  */
 public class TestNGRunner {
 
-	//TODO: mostly copies from StudentTesterClass, maybe inheritance would be better?
+	//TODO: mostly copies from StudentTesterMain, maybe inheritance would be better?
 	private String testNGXmlPathName = null;
-	private File tempRoot, testRoot;
+	private File tempRoot, testRoot, contentRoot;
 	private boolean isJsonOutput;
 	private boolean muteCodeOutput = true;
 	private JSONObject json;
 	private JSONArray singleResults;
+
+	private StudentSecurity secInst = StudentSecurity.getInstance();
 
 	/**
 	 * Creates a new TestNG wrapper class.
@@ -49,9 +52,10 @@ public class TestNGRunner {
 	 * @param testRoot folder containing unit tests
 	 * @param isJsonOutput whether the tester is outputting JSON
 	 */
-	public TestNGRunner(final File tempRoot, final File testRoot, final boolean isJsonOutput) {
+	public TestNGRunner(final File tempRoot, final File testRoot, final File contentRoot, final boolean isJsonOutput) {
 		this.tempRoot = tempRoot;
 		this.testRoot = testRoot;
+		this.contentRoot = contentRoot;
 		this.isJsonOutput = isJsonOutput;
 	}
 
@@ -87,6 +91,7 @@ public class TestNGRunner {
 	 */
 	@SuppressWarnings("deprecation")
 	public final void run() throws Exception {
+
 		TestNG testng = new TestNG();
 		boolean incompleteTests = false;
 		// get a fancy new loader so Java 9 does not scream in our face
@@ -103,6 +108,30 @@ public class TestNGRunner {
 				log("No testng.xml found, running all test classes");
 				List<String> testFilenames = new ArrayList<String>();
 				StudentHelperClass.populateFilenames(testRoot, testFilenames, true);
+
+				// add test files to protected list. Do not add paths as there might be differences under Linux/Windows
+				// path separators
+				// TODO: implement paths anyway?
+				List<String> testFilenamesNoPath = new ArrayList<String>();
+				StudentHelperClass.populateFilenames(testRoot, testFilenamesNoPath, false);
+				for (String testClassName : testFilenamesNoPath) {
+						secInst.addProtectedFile(testClassName); // add .java file to protected list
+						secInst.addProtectedFile(testClassName.replace(".java", ".class")); // add .class file to protected list
+				}
+
+				List<String> codeFilenames = new ArrayList<String>();
+				StudentHelperClass.populateFilenames(contentRoot, codeFilenames, true);
+
+				for (String codeClassName : codeFilenames) {
+					try {
+						Class testClass = loader.loadClass(StudentHelperClass.filePathToClassPath(codeClassName));
+						// add to blacklist
+						secInst.addClass(testClass);
+					} catch (ClassNotFoundException e) {
+						StudentLogger.log(e.toString());
+						StudentLogger.log("Class not found: " + codeClassName);
+					}
+				}
 
 				List<XmlSuite> suites = new ArrayList<XmlSuite>();
 				XmlSuite suite = new XmlSuite();
@@ -126,7 +155,7 @@ public class TestNGRunner {
 							test.setXmlClasses(classes);
 							test.setName(StudentHelperClass.filePathToClassPath(testClassName) + " (JUnit)");
 							test.setJunit(true);
-							Logger.log(String.format("Found JUnit class %s", testClassName));
+							StudentLogger.log(String.format("Found JUnit class %s", testClassName));
 							tests.add(test);
 							break;
 						case TESTNG:
@@ -135,19 +164,19 @@ public class TestNGRunner {
 							classes.add(new XmlClass(testClass));
 							test.setXmlClasses(classes);
 							test.setName(StudentHelperClass.filePathToClassPath(testClassName) + " (TestNG)");
-							Logger.log(String.format("Found TestNG class %s", testClassName));
+							StudentLogger.log(String.format("Found TestNG class %s", testClassName));
 							tests.add(test);
 							break;
 						case MIXED:
-							Logger.log(String.format("Class %s contains mixed test annotations!", testClassName));
-							Logger.log("Skipping " + testClassName);
+							StudentLogger.log(String.format("Class %s contains mixed test annotations!", testClassName));
+							StudentLogger.log("Skipping " + testClassName);
 							break;
 						default:
-							Logger.log("Skipping " + testClassName);
+							StudentLogger.log("Skipping " + testClassName);
 						}
 					} catch (ClassNotFoundException e) {
-						Logger.log(e.toString());
-						Logger.log("Class not found: " + testClassName);
+						StudentLogger.log(e.toString());
+						StudentLogger.log("Class not found: " + testClassName);
 						incompleteTests = true;
 					}
 				}
@@ -202,7 +231,7 @@ public class TestNGRunner {
 		}
 
 		// set TestNG verbosity. TestNG is supposed to have 10 levels.
-		testng.setVerbose(Logger.getVerbosity());
+		testng.setVerbose(StudentLogger.getVerbosity());
 
 		// mute output while testing, this should be kept on
 		if (muteCodeOutput) {
@@ -245,7 +274,9 @@ public class TestNGRunner {
 		// run TestNG. If an exception is thrown, restore streams.
 		Exception tempEx = null;
 		try {
-			StudentSec.setCustomSecurityManager();
+			secInst.setDefaultRestrictions();
+			secInst.setCustomSecurityManager();
+
 			testng.run();
 		} catch (Exception e) {
 			tempEx = e;

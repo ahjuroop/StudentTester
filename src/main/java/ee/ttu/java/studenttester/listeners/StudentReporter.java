@@ -9,7 +9,9 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import ee.ttu.java.studenttester.annotations.Gradeable;
-import ee.ttu.java.studenttester.classes.StudentSec;
+import ee.ttu.java.studenttester.classes.*;
+import ee.ttu.java.studenttester.enums.StudentPolicy;
+import ee.ttu.java.studenttester.exceptions.StudentTesterException;
 import org.testng.IReporter;
 import org.testng.ISuite;
 import org.testng.ISuiteResult;
@@ -19,9 +21,6 @@ import org.testng.xml.XmlClass;
 import org.testng.xml.XmlSuite;
 
 import ee.ttu.java.studenttester.annotations.TestContextConfiguration;
-import ee.ttu.java.studenttester.classes.Logger;
-import ee.ttu.java.studenttester.classes.StudentHelperClass;
-import ee.ttu.java.studenttester.classes.StudentTesterException;
 import ee.ttu.java.studenttester.dataclasses.SingleTest;
 import ee.ttu.java.studenttester.dataclasses.TestResults;
 import ee.ttu.java.studenttester.enums.ReportMode;
@@ -116,7 +115,7 @@ public final class StudentReporter implements IReporter, IBaseStudentReporter {
 
 				ITestContext tc = sr.getTestContext();
 				if (tc.getCurrentXmlTest().getClasses().size() > 1) {
-					Logger.log(String.format("DummyTest context %s contains %d classes. "
+					StudentLogger.log(String.format("DummyTest context %s contains %d classes. "
 							+ "%s will be pulled from %s and it applies "
 							+ "to ALL other classes in this test context.",
 							tc.getName(),
@@ -139,7 +138,7 @@ public final class StudentReporter implements IReporter, IBaseStudentReporter {
 							.map(SingleTest::getCode)
 							.collect(Collectors.toList())
 							.contains(conf.identifier())) {
-						Logger.log(tc.getCurrentXmlTest().getClasses().get(0).getName()
+						StudentLogger.log(tc.getCurrentXmlTest().getClasses().get(0).getName()
 								+ " clashes with already existing identifier " + conf.identifier());
 						return;
 					}
@@ -172,7 +171,7 @@ public final class StudentReporter implements IReporter, IBaseStudentReporter {
 						testsFromContext = tc.getSkippedTests().getAllResults();
 						break;
 					default:
-						Logger.log("This should never happen.");
+						StudentLogger.log("This should never happen.");
 						return;
 					}
 					for (ITestResult unitTestResult : testsFromContext) {
@@ -199,9 +198,12 @@ public final class StudentReporter implements IReporter, IBaseStudentReporter {
 									unitTestResult.getName(),
 									StudentHelperClass.getStackTraceString(unitTestResult.getThrowable(), unitTestResult.getName().split(" ")[0])));
 						}
-						if (Logger.getPrivateMessages().containsKey(unitTestResult.getName())) {
-							unitTestNotes.add(String.format("\tNotes on %s:\n\t - %s\n", unitTestResult.getName(),
-									String.join("\n\t - ", Logger.getPrivateMessages().get(unitTestResult.getName()))));
+						if (StudentTesterAPI.hasInstance(unitTestResult.getTestClass().getRealClass())) {
+							StudentTesterAPI api = StudentTesterAPI.getInstance(unitTestResult.getTestClass().getRealClass());
+							api.getPrivateMessages().forEach((test, msgs) -> {
+								unitTestNotes.add(String.format("\tNotes on %s:\n\t - %s\n", test,
+										String.join("\n\t - ", msgs)));
+							});
 						}
 					}
 				}
@@ -305,7 +307,7 @@ public final class StudentReporter implements IReporter, IBaseStudentReporter {
 				str += String.format("\tDetailed information:  %s\n", unitTest.getThrowable().getMessage());
 			}
 			if (unitTest.getThrowable() instanceof SecurityException
-					&& unitTest.getThrowable().getMessage().equals(StudentSec.EXITVM_MSG)) {
+					&& unitTest.getThrowable().getMessage().contains("exit the JVM")) {
 				str += "\tWarning: It seems that System.exit() is used in the code. "
 						+ "Please remove it to prevent the tester from working abnormally.\n";
 			}
@@ -330,12 +332,15 @@ public final class StudentReporter implements IReporter, IBaseStudentReporter {
 			}
 			break;
 		default:
-			Logger.log("No such test result code: " + unitTest.getStatus());
+			StudentLogger.log("No such test result code: " + unitTest.getStatus());
 			return null;
 		}
-		if (Logger.getPublicMessages().containsKey(unitTest.getName())) {
-			str += String.format("\tNotes on %s:\n\t - %s\n", cleanName,
-					String.join("\n\t - ", Logger.getPublicMessages().get(unitTest.getName())));
+		if (StudentTesterAPI.hasInstance(unitTest.getTestClass().getRealClass())) {
+			StudentTesterAPI api = StudentTesterAPI.getInstance(unitTest.getTestClass().getRealClass());
+			if (api.getPublicMessages().containsKey(unitTest.getName())) {
+				str += String.format("\tNotes on %s:\n\t - %s\n", cleanName,
+						String.join("\n\t - ", api.getPublicMessages().get(unitTest.getName())));
+			}
 		}
 		return str;
 	}
@@ -350,7 +355,7 @@ public final class StudentReporter implements IReporter, IBaseStudentReporter {
 			Method m = test.getMethod().getConstructorOrMethod().getMethod();
 			return (Gradeable) m.getAnnotation(Gradeable.class);
 		} catch (SecurityException e) {
-			Logger.log(e.getMessage());
+			StudentLogger.log(e.getMessage());
 		}
 		return null;
 	}
@@ -372,7 +377,7 @@ public final class StudentReporter implements IReporter, IBaseStudentReporter {
 			}
 			return null;
 		} catch (SecurityException e) {
-			Logger.log(e.getMessage());
+			StudentLogger.log(e.getMessage());
 		}
 		return null;
 	}

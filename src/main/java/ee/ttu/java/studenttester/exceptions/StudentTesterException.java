@@ -1,4 +1,4 @@
-package ee.ttu.java.studenttester.classes;
+package ee.ttu.java.studenttester.exceptions;
 
 /**
  * Dummy exception for StudentTester.

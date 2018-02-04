@@ -1,5 +1,5 @@
 group 'ee.ttu.studenttester'
-version = '1.3'
+version = '1.4'
 
 apply plugin: 'java'
 apply plugin: 'application'
@@ -45,6 +45,7 @@ test {
 }
 
 jar {
+    dependsOn test
     manifest {
         attributes 'Main-Class': mainClassName,
                    'Implementation-Title': 'StudentTester',

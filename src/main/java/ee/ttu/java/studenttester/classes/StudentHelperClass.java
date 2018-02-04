@@ -1,5 +1,5 @@
 package ee.ttu.java.studenttester.classes;
-import static ee.ttu.java.studenttester.classes.Logger.log;
+import static ee.ttu.java.studenttester.classes.StudentLogger.log;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -17,6 +17,7 @@ import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 
 import ee.ttu.java.studenttester.enums.TestClassType;
+import ee.ttu.java.studenttester.exceptions.StudentTesterException;
 
 /**
  * Helper class for common functions.
@@ -142,8 +143,8 @@ public final class StudentHelperClass {
 			Attributes attr = manifest.getMainAttributes();
 			return attr.getValue("Implementation-Version");
 		} catch (Exception e) {
-			Logger.log(e.toString());
-			Logger.log("Does the attribute Implementation-Version exist?");
+			StudentLogger.log(e.toString());
+			StudentLogger.log("Does the attribute Implementation-Version exist?");
 		}
 		return "unknown";
 	}
@@ -186,7 +187,7 @@ public final class StudentHelperClass {
 	 * @return success
 	 */
 	public static boolean deleteFolder(final File src) {
-		Logger.log("Deleting " + src.getAbsolutePath());
+		StudentLogger.log("Deleting " + src.getAbsolutePath());
 		if (src.exists()) {
 			File[] files = src.listFiles();
 			if (files != null) {
@@ -195,7 +196,7 @@ public final class StudentHelperClass {
 						deleteFolder(f);
 					} else {
 						if (!f.delete()) {
-							Logger.log("Failed to delete " + f.getAbsolutePath());
+							StudentLogger.log("Failed to delete " + f.getAbsolutePath());
 						}
 					}
 				}
@@ -316,7 +317,7 @@ public final class StudentHelperClass {
 		} else {
 			String fileName = src.getName().toString();
 			if (fileName.endsWith(".java")) {
-				// Logger.log("Found java file " + src);
+				// StudentLogger.log("Found java file " + src);
 				toBeCompiled.add(src);
 			}
 		}

@@ -1,5 +1,5 @@
 package ee.ttu.java.studenttester.listeners;
-import static ee.ttu.java.studenttester.classes.Logger.log;
+import static ee.ttu.java.studenttester.classes.StudentLogger.log;
 
 import org.testng.ISuite;
 import org.testng.ISuiteListener;

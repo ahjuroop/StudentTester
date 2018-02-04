@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.Scanner;
 
+import ee.ttu.java.studenttester.classes.StudentTesterMain;
 import org.json.JSONObject;
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
@@ -22,7 +23,6 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import ee.ttu.java.studenttester.classes.StudentHelperClass;
-import ee.ttu.java.studenttester.classes.StudentTesterClass;
 
 /**
  * Tests for StudentTester.
@@ -62,21 +62,21 @@ public class Tests {
 		Assert.assertEquals(results.getInt("percent"), 50);
 	}
 
-	@Test(description = "Create a muted test. DummyTest names and scores should not be visible.")
+	@Test(description = "Create a muted test. Test names and scores should not be visible.")
 	public void testMuted() {
 		JSONObject results = getSimpleTestResults();
 		Assert.assertFalse(results.getString("output").contains("testSanity"));
 		Assert.assertFalse(results.getString("output").contains("Overall grade"));
 	}
 	
-	@Test(description = "The test should get an exception as a shell command is invoked")
-	public void testRuntimeExec() {
+	@Test(description = "Various checks related to security.")
+	public void testPolicyCheck() {
 		JSONObject results = getSimpleTestResults();
 		Assert.assertEquals(results.getInt("percent"), 100);
 	}
 
-	@Test(description = "DummyTest weights with random numbers. Some tests fail, some do not. The grade must be correct.")
-	public void testWeights100() throws IOException, URISyntaxException {
+	@Test(description = "Test weights with random numbers. Some tests fail, some do not. The grade must be correct.")
+	public void testWeights100() {
 
 		String testCode = getFileTemplate(currentTestName);
 		String testCodeInner = getFileTemplate(currentTestName + "Func");
@@ -121,6 +121,22 @@ public class Tests {
 	public void testBrokenStudentCode() {
 		JSONObject results = getSimpleTestResults();
 		Assert.assertTrue(results.getString("output").contains(String.format("';' expected", testCounter)));
+	}
+
+	@Test(description = "Check if logging from unit tests works.")
+	public void testAPILog() {
+		JSONObject results = getSimpleTestResults();
+		Assert.assertTrue(results.getString("output").contains("Notes on testLog:"));
+		Assert.assertTrue(results.getString("output").contains("This is fine"));
+		Assert.assertTrue(results.getJSONArray("results").getJSONObject(0).getString("output").contains("Let's hope this isn't seen"));
+	}
+
+	@Test(description = "Check if class blacklisting works.")
+	public void testClassBlacklist() {
+		JSONObject results = getSimpleTestResults();
+		Assert.assertTrue(results.getString("output").contains("Before: [class ClassBlacklist]"));
+		Assert.assertTrue(results.getString("output").contains("Contains: class ClassBlacklist"));
+		Assert.assertTrue(results.getString("output").contains("After: [class ClassBlacklist]"));
 	}
 
 	@Test(description = "Check if file contents are included in JSON")
@@ -230,24 +246,28 @@ public class Tests {
 	 * @return test results in JSON format
 	 */
 	public JSONObject getTestResults(final boolean checkStyleEnabled, final boolean testNGEnabled) {
-		StudentTesterClass c = new StudentTesterClass(tempDirName + "test/", tempDirName + "source/");
+		StudentTesterMain c = new StudentTesterMain(tempDirName + "test/", tempDirName + "source/");
 		c.enableCheckstyle(checkStyleEnabled);
 		c.enableTestNG(testNGEnabled);
 		c.outputJSON(true);
-		// c.setQuiet(true);
+		// c.muteCodeOutput(false);
 		c.setVerbosity(3);
-		c.run();
+		try {
+			c.run();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 		JSONObject results = new JSONObject(c.getJson());
 		return results;
 	}
 
 	/**
-	 * Reads and returns a txt file from templates folder.
-	 * @param filename - .txt file to open
-	 * @return - .txt file contents
+	 * Reads and returns a java file from templates folder.
+	 * @param filename - .java file to open
+	 * @return - .java file contents
 	 */
 	public String getFileTemplate(final String filename) {
-		InputStream is = getClass().getResourceAsStream("/templates/" + filename + ".txt");
+		InputStream is = getClass().getResourceAsStream("/templates/" + filename + ".java");
 		try (Scanner s = new Scanner(is, "UTF-8")) {
 			s.useDelimiter("\\A");
 			return s.next();

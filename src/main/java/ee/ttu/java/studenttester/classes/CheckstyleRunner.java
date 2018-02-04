@@ -1,5 +1,5 @@
 package ee.ttu.java.studenttester.classes;
-import static ee.ttu.java.studenttester.classes.Logger.log;
+import static ee.ttu.java.studenttester.classes.StudentLogger.log;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -8,6 +8,7 @@ import java.io.PrintStream;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import ee.ttu.java.studenttester.enums.StudentPolicy;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -50,19 +51,21 @@ public class CheckstyleRunner {
 	 * Executes the checkstyle jar and collects its results.
 	 */
 	public final void run() {
+
 		// save the the original System.out, whatever it is right now
 		PrintStream original = System.out;
 		// save original err as well to suppress Checkstyle errors
 		PrintStream originalErr = System.err;
 		// disable error stream temporarily if verbosity 0
-		if (Logger.getVerbosity() == 0) {
+		if (StudentLogger.getVerbosity() == 0) {
 			System.setErr(null);
 		}
 		// capture checkstyle output to a variable
 		ByteArrayOutputStream temp = StudentHelperClass.getNewStdoutObject();
 		// disable System.exit() since Checkstyle likes to terminate the VM
-		StudentSec.setCustomSecurityManager();
-
+		StudentSecurity.getInstance().addClass(com.puppycrawl.tools.checkstyle.Main.class);
+		StudentSecurity.getInstance().addPolicy(StudentPolicy.DISABLE_EXIT);
+		StudentSecurity.getInstance().setCustomSecurityManager();
 		try {
 			System.out.println("Running Checkstyle...");
 			com.puppycrawl.tools.checkstyle.Main.main("-c", checkStyleXmlPath, contentRoot.getAbsolutePath());
@@ -72,7 +75,7 @@ public class CheckstyleRunner {
 			// checkstyle exit caught
 			log("Checkstyle forced exit successfully caught.");
 		} finally {
-			StudentSec.restoreSecurityManager();
+			StudentSecurity.getInstance().restoreSecurityManager();
 		}
 		String checkstyleResult = temp.toString();
 		// restore streams

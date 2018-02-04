@@ -1,5 +1,5 @@
 package ee.ttu.java.studenttester.interfaces;
-import ee.ttu.java.studenttester.classes.StudentTesterException;
+import ee.ttu.java.studenttester.exceptions.StudentTesterException;
 import ee.ttu.java.studenttester.dataclasses.TestResults;
 
 /**

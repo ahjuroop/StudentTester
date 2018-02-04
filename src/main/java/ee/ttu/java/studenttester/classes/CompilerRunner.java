@@ -1,12 +1,11 @@
 package ee.ttu.java.studenttester.classes;
-import static ee.ttu.java.studenttester.classes.Logger.log;
+import ee.ttu.java.studenttester.exceptions.StudentTesterException;
+
+import static ee.ttu.java.studenttester.classes.StudentLogger.log;
 
 import java.io.File;
 import java.io.StringWriter;
 import java.io.Writer;
-import java.lang.reflect.Method;
-import java.net.URL;
-import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -38,7 +37,6 @@ public class CompilerRunner {
 	 * @param toBeCompiledRelative - names of files to compiled, must exist in tempDirectory and be given in relative paths
 	 * @param tempDirectory - folder to be put into classpath after compilation
 	 * @param testRoot - folder containing tests
-	 * @param compilerOptions
 	 */
 	public CompilerRunner(final List<String> toBeCompiledRelative, final File tempDirectory, final File testRoot) {
 		// convert relative paths to absolute ones for the compiler
@@ -72,6 +70,7 @@ public class CompilerRunner {
 	 * @return true if compilation was done, false otherwise
 	 */
 	public final boolean run() {
+
 		try {
 			compiler = ToolProvider.getSystemJavaCompiler();
 			if (compiler == null) {
@@ -218,64 +217,8 @@ public class CompilerRunner {
 						diagnostic.toString().replace(tempDirectory.getAbsolutePath(), ""));
 			}
 
-			// simple switch statement to provide hints to common compilation problems
 			if (/* sameErrorCounter == 0 && */ diagnostic.getCode() != null) {
-				switch (diagnostic.getCode()) {
-				case "compiler.err.cant.resolve.location.args":
-					System.out.println("Hint: does the method exist?");
-					break;
-
-				case "compiler.err.illegal.char":
-					System.out.println("Hint: there seems to be an encoding error.");
-					if (diagnostic.getLineNumber() == 1 && diagnostic.getPosition() == 1) {
-						System.out.println("The file likely contains a Byte Order Mark (BOM). Please remove it.");
-					}
-					break;
-
-				case "compiler.err.cant.resolve.location":
-					System.out.println("Hint: have you declared all necessary variables/types?");
-					break;
-
-				case "compiler.err.prob.found.req":
-					System.out.println("Hint: casting one type to another might help.");
-					break;
-
-				case "compiler.err.unreachable.stmt":
-					System.out.println("Hint: remove either the statement causing the code to be unreachable or the code itself.");
-					break;
-
-				case "compiler.err.unreported.exception.need.to.catch.or.throw":
-					System.out.println("Hint: handle the exception inside the function or "
-							+ "include \"throws <exception type>\" in the function's declaration.");
-					break;
-
-				case "compiler.err.not.stmt":
-					System.out.println("Hint: this might be a typo.");
-					break;
-
-				case "compiler.err.expected":
-					System.out.println("Hint: did you miss a name or character?");
-					break;
-
-				case "compiler.err.invalid.meth.decl.ret.type.req":
-					System.out.println("Hint: you must specify what the function returns.");
-					break;
-
-				case "compiler.err.missing.ret.stmt":
-					// System.out.println("Hint: the function expects to return something.");
-					break;
-
-				case "compiler.err.premature.eof":
-					System.out.println("Hint: part of the file might be missing.");
-					break;
-					// etc...
-
-				default:
-					if (Logger.getVerbosity() > 1) {
-						log("The error code is " + diagnostic.getCode());
-					}
-					break;
-				}
+				System.out.print(CompilerErrorHints.getDiagnosticStr(diagnostic));
 			}
 		}
 		if (errorsSkipped) {
