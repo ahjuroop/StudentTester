@@ -114,8 +114,6 @@ public enum StudentPolicy implements IStudentPolicy {
      * @param p - permission to check
      */
     private static void disableSockets(Permission p) {
-        if (secInstance.getProtectedFiles().stream().anyMatch(p.getName()::contains)) {
-            throw new SecurityException();
-        }
+        // TODO
     }
 }
