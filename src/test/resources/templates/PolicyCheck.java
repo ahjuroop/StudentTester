@@ -79,6 +79,6 @@ public class PolicyCheck {
 
 	public void hijackSecurityManager() {
 		StudentSecurity sec = StudentSecurity.getInstance();
-		//sec.removeClass(getClass());
+		sec.removeClass(getClass());
 	}
 }
