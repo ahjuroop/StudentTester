@@ -1,9 +1,11 @@
+import ee.ttu.java.studenttester.classes.StudentTesterAPI;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
 public class PolicyCheckTest {
 
 	PolicyCheck r = new PolicyCheck();
+	StudentTesterAPI api = StudentTesterAPI.getInstance(getClass());
 
 	@Test(expectedExceptions = SecurityException.class)
 	public void testWhoami() {
@@ -29,5 +31,13 @@ public class PolicyCheckTest {
 	@Test(expectedExceptions = SecurityException.class)
 	public void testSniffFile() {
 		r.sniffFile();
+	}
+	@Test(expectedExceptions = SecurityException.class)
+	public void testHijackApi() {
+		r.hijackApi();
+	}
+	@Test(expectedExceptions = SecurityException.class)
+	public void testHijackSecurityManager() {
+		r.hijackSecurityManager();
 	}
 }

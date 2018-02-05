@@ -3,6 +3,7 @@ package ee.ttu.java.studenttester.classes;
 import ee.ttu.java.studenttester.enums.StudentPolicy;
 import ee.ttu.java.studenttester.interfaces.IStudentPolicy;
 
+import java.security.Permission;
 import java.util.*;
 
 import static ee.ttu.java.studenttester.classes.StudentLogger.log;
@@ -20,6 +21,7 @@ public class StudentTesterAPI {
     private StudentTesterAPI() {}
 
     public static boolean hasInstance(Class clazz) {
+        System.getSecurityManager().checkPermission(null);
         return apiObjects.containsKey(clazz);
     }
 
@@ -32,6 +34,9 @@ public class StudentTesterAPI {
         if (clazz == null) {
             throw new NullPointerException("The class must be defined");
         }
+        // check for permission with an empty object,
+        // SecurityManager must be configured to throw an exception in this case
+        System.getSecurityManager().checkPermission(null);
         if (apiObjects.containsKey(clazz)) {
             return apiObjects.get(clazz);
         }

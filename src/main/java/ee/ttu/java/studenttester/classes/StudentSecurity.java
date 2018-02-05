@@ -72,6 +72,11 @@ public class StudentSecurity {
                 // allow everything
                 return;
             }
+            // if testing with an empty object via API, throw an exception
+            // is this safe?
+            if (permission == null) {
+                throw new SecurityException("Security check failed.");
+            }
             // log(String.format("Attempting: %s",  permission.toString()));
             // else iterate over all active policies and call their respective methods
             for (IStudentPolicy policy : policies) {
@@ -123,7 +128,17 @@ public class StudentSecurity {
     private StudentSecurity() {
 
     }
+
+    /**
+     * Returns the singleton of this class if the security manager has not been changed or the caller is allowed to
+     * access this instance.
+     * @return the singleton of this class, if the action was allowed
+     */
     public static StudentSecurity getInstance() {
+        // if the security manager has been changed, see if the caller is allowed to access it
+        if (securityManager.equals(System.getSecurityManager())) {
+            System.getSecurityManager().checkPermission(null);
+        }
         return instance;
     }
 

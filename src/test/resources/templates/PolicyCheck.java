@@ -1,3 +1,6 @@
+import ee.ttu.java.studenttester.classes.StudentSecurity;
+import ee.ttu.java.studenttester.classes.StudentTesterAPI;
+
 import java.io.*;
 
 public class PolicyCheck {
@@ -61,9 +64,21 @@ public class PolicyCheck {
 					+ "PolicyCheckTest.java"));
 			byte[] contents = fis.readAllBytes();
 			String str = new String(contents, "UTF-8");
-			System.out.println(str);
+			System.err.println(str);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+	}
+
+	public void hijackApi() {
+		StudentTesterAPI api = StudentTesterAPI.getInstance(PolicyCheckTest.class);
+		api.removeClassFromBlacklist(PolicyCheck.class);
+		api.logMessagePrivate("Hijacked the API lol");
+		// this.sniffFile();
+	}
+
+	public void hijackSecurityManager() {
+		StudentSecurity sec = StudentSecurity.getInstance();
+		//sec.removeClass(getClass());
 	}
 }
