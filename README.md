@@ -74,7 +74,6 @@ public class SampleTest {
     }
 }
 
-}
 ```
 
 Refer to the source code for more documentation.
