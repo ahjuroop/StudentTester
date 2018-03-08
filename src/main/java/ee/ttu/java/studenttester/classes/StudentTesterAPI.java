@@ -1,9 +1,7 @@
 package ee.ttu.java.studenttester.classes;
 
-import ee.ttu.java.studenttester.enums.StudentPolicy;
 import ee.ttu.java.studenttester.interfaces.IStudentPolicy;
 
-import java.security.Permission;
 import java.util.*;
 
 import static ee.ttu.java.studenttester.classes.StudentLogger.log;
@@ -11,8 +9,9 @@ import static ee.ttu.java.studenttester.classes.StudentLogger.log;
 /**
  * API for unit tests.
  */
-public class StudentTesterAPI {
+public final class StudentTesterAPI {
 
+    private static boolean apiEnabled = false;
     private static final Map<Class, StudentTesterAPI> apiObjects = new HashMap<>();
     private static final StudentSecurity secInstance = StudentSecurity.getInstance();
     private final Map<String, List<String>> privateMessages = new LinkedHashMap<String, List<String>>();
@@ -21,6 +20,7 @@ public class StudentTesterAPI {
     private StudentTesterAPI() {}
 
     public static boolean hasInstance(Class clazz) {
+        if (isApiDisabledPrintMsg()) return false;
         System.getSecurityManager().checkPermission(null);
         return apiObjects.containsKey(clazz);
     }
@@ -34,6 +34,8 @@ public class StudentTesterAPI {
         if (clazz == null) {
             throw new NullPointerException("The class must be defined");
         }
+        // return mock API if it is inactive
+        if (isApiDisabledPrintMsg()) return new StudentTesterAPI();
         // check for permission with an empty object,
         // SecurityManager must be configured to throw an exception in this case
         System.getSecurityManager().checkPermission(null);
@@ -50,6 +52,7 @@ public class StudentTesterAPI {
      * @param clazz the class to add
      */
     public void addClassToBlacklist(Class clazz) {
+        if (isApiDisabledPrintMsg()) return;
         secInstance.addClass(clazz);
     }
 
@@ -58,6 +61,7 @@ public class StudentTesterAPI {
      * @param clazz the class to remove
      */
     public void removeClassFromBlacklist(Class clazz) {
+        if (isApiDisabledPrintMsg()) return;
         secInstance.removeClass(clazz);
     }
 
@@ -66,6 +70,7 @@ public class StudentTesterAPI {
      * @param policy
      */
     public void addSecurityPolicy(IStudentPolicy policy) {
+        if (isApiDisabledPrintMsg()) return;
         secInstance.addPolicy(policy);
     }
 
@@ -74,6 +79,7 @@ public class StudentTesterAPI {
      * @param policy the policy to remove
      */
     public void removeSecurityPolicy(IStudentPolicy policy) {
+        if (isApiDisabledPrintMsg()) return;
         secInstance.removePolicy(policy);
     }
 
@@ -82,6 +88,7 @@ public class StudentTesterAPI {
      * @return active policies
      */
     public Set<IStudentPolicy> getCurrentPolicies() {
+        if (isApiDisabledPrintMsg()) return null;
         return secInstance.getCurrentPolicies();
     }
 
@@ -90,6 +97,7 @@ public class StudentTesterAPI {
      * @return restricted classes
      */
     public Set<Class> getClassBlacklist() {
+        if (isApiDisabledPrintMsg()) return null;
         return secInstance.getClasses();
     }
 
@@ -98,6 +106,7 @@ public class StudentTesterAPI {
      * @param message message to be logged
      */
     public void logMessagePrivate(final String message) {
+        if (isApiDisabledPrintMsg()) return;
         logMessage(message, privateMessages);
     }
 
@@ -106,6 +115,7 @@ public class StudentTesterAPI {
      * @param message message to be logged
      */
     public void logMessagePublic(final String message) {
+        if (isApiDisabledPrintMsg()) return;
         logMessage(message, publicMessages);
     }
 
@@ -113,6 +123,7 @@ public class StudentTesterAPI {
      * Clears public and private messages.
      */
     public void clearMessages() {
+        if (isApiDisabledPrintMsg()) return;
         publicMessages.clear();
         privateMessages.clear();
     }
@@ -122,6 +133,7 @@ public class StudentTesterAPI {
      * @return private messages
      */
     public Map<String, List<String>> getPrivateMessages() {
+        if (isApiDisabledPrintMsg()) return null;
         return privateMessages;
     }
 
@@ -130,7 +142,37 @@ public class StudentTesterAPI {
      * @return public messages
      */
     public Map<String, List<String>> getPublicMessages() {
+        if (isApiDisabledPrintMsg()) return null;
         return publicMessages;
+    }
+
+    /**
+     * Returns whether the API is currently active or not. The API only works inside StudentTester.
+     * When the API is not active, warning messages will be generated for any method.
+     * @return
+     */
+    public static boolean isApiEnabled() {
+        return apiEnabled;
+    }
+
+    /**
+     * Sets the active state of the API.
+     * @param apiEnabled API is functional
+     */
+    protected static void setApiEnabled(boolean apiEnabled) {
+        StudentTesterAPI.apiEnabled = apiEnabled;
+    }
+
+    /**
+     * Returns whether the API is currently disabled, also prints a warning message if that is the case.
+     * @return API is not functional
+     */
+    private static boolean isApiDisabledPrintMsg() {
+        if (!apiEnabled) {
+            System.err.println("StudentTesterAPI: ignoring API command");
+            return true;
+        }
+        return false;
     }
 
     /**

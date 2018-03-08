@@ -71,6 +71,8 @@ public class Tests {
 	
 	@Test(description = "Various checks related to security.")
 	public void testPolicyCheck() {
+		//TODO: policy checks to separate trackable unit tests (currently must be deciphered from output)
+		//TODO: fails if no Internet connection
 		JSONObject results = getSimpleTestResults();
 		Assert.assertEquals(results.getInt("percent"), 100);
 	}

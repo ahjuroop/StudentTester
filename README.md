@@ -46,4 +46,37 @@ static void FooTestMethod {
 
 The code above will attach a description and the exception message (if exists) to the unit test FooTestMethod. If additional information is required, ```printStackTrace``` may replace ```printExceptionMessage```.
 
+There is a minimal API available for interacting with the tester during unit testing. Basic usage is as follows:
+
+```java
+
+public class SampleTest {
+
+    StudentTesterAPI api = StudentTesterAPI.getInstance(getClass());
+
+    @Test
+    public void someTest() {
+
+        // by default all classes from student code are "blacklisted", which means some actions are restricted
+        Example ex = new Example();
+        System.err.println(api.getClassBlacklist()); // [class Example]
+
+        // one can add or remove policies via the API, here we are disabling access to network sockets
+        api.addSecurityPolicy(StudentPolicy.DISABLE_SOCKETS);
+
+        int answer = ex.someMethod();
+        if (answer < 20 || answer > 30) {
+            api.logMessagePublic("The answer is almost correct, keep trying!"); // is visible in the report
+        } else if (answer == 25) {
+            api.logMessagePrivate("A new Einstein must have been born, but don't tell them."); // is visible only in JSON
+            api.removeClassFromBlacklist(Example.class); // Example class can now do anything
+        }
+    }
+}
+
+}
+```
+
+Refer to the source code for more documentation.
+
 ## To be continued...

@@ -1,6 +1,9 @@
 import ee.ttu.java.studenttester.classes.StudentTesterAPI;
+import ee.ttu.java.studenttester.enums.StudentPolicy;
 import org.testng.Assert;
 import org.testng.annotations.Test;
+
+import java.net.MalformedURLException;
 
 public class PolicyCheckTest {
 
@@ -39,5 +42,17 @@ public class PolicyCheckTest {
 	@Test(expectedExceptions = SecurityException.class)
 	public void testHijackSecurityManager() {
 		r.hijackSecurityManager();
+	}
+	@Test
+	public void testOpenSocket() throws Exception {
+		// default implementation should succeed
+		// also fails if no Internet connection
+		r.openSocket();
+	}
+	@Test(expectedExceptions = SecurityException.class)
+	public void testOpenSocketBad() throws Exception {
+		// this implementation should not succeed
+		api.addSecurityPolicy(StudentPolicy.DISABLE_SOCKETS);
+		r.openSocket();
 	}
 }

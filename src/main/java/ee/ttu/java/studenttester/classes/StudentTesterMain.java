@@ -333,6 +333,7 @@ public final class StudentTesterMain {
 				System.out.println("Internal error, cannot continue.");
 			} finally {
 				secInstance.restoreSecurityManager();
+				StudentTesterAPI.setApiEnabled(false);
 			}
 		}
 

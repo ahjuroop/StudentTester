@@ -49,7 +49,7 @@ public class StudentSecurity {
         addPolicy(DISABLE_EXIT);
         addPolicy(DISABLE_ANY_FILE_MATCHER);
         addPolicy(DISABLE_SECURITYMANAGER_CHANGE);
-        addPolicy(DISABLE_REFLECTION);
+        addPolicy(DISABLE_REFLECTION_SHALLOW);
         addPolicy(DISABLE_EXECUTION);
         addPolicy(DISABLE_TEST_SNIFFING);
     }
@@ -81,7 +81,7 @@ public class StudentSecurity {
             // else iterate over all active policies and call their respective methods
             for (IStudentPolicy policy : policies) {
                 try {
-                    policy.getConsumer().accept(permission);
+                    policy.getConsumer().accept(permission, stack);
                 } catch (Exception e) {
                     // Illegal attempt caught, log an error or do smth
                     log(String.format("Illegal attempt caught: %s",  permission.toString()));

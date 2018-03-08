@@ -2,6 +2,9 @@ import ee.ttu.java.studenttester.classes.StudentSecurity;
 import ee.ttu.java.studenttester.classes.StudentTesterAPI;
 
 import java.io.*;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLConnection;
 
 public class PolicyCheck {
 
@@ -33,10 +36,6 @@ public class PolicyCheck {
 
 	public void exit() {
 		System.exit(1);
-	}
-
-	public void tryGetTestFile() {
-
 	}
 
 	public void innocent() {
@@ -80,5 +79,12 @@ public class PolicyCheck {
 	public void hijackSecurityManager() {
 		StudentSecurity sec = StudentSecurity.getInstance();
 		sec.removeClass(getClass());
+	}
+
+	public void openSocket() throws Exception {
+		URL url = new URL("https://example.com");
+		URLConnection conn = url.openConnection();
+		InputStream is = conn.getInputStream();
+		byte[] data = is.readAllBytes();
 	}
 }

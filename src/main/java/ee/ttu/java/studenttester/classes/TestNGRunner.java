@@ -276,7 +276,7 @@ public class TestNGRunner {
 		try {
 			secInst.setDefaultRestrictions();
 			secInst.setCustomSecurityManager();
-
+			StudentTesterAPI.setApiEnabled(true);
 			testng.run();
 		} catch (Exception e) {
 			tempEx = e;
