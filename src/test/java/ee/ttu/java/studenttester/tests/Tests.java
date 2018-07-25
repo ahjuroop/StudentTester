@@ -225,7 +225,7 @@ public class Tests {
 	 * @return success
 	 */
 	public boolean addFile(final String code, final String name, final boolean isTest) {
-		String arg = String.format(tempDirName + "%s/%s.java", isTest ? "test" : "source", name);
+		String arg = String.format(tempDirName + "%s/%s.java", isTest ? "/test" : "/source", name);
 		try (PrintWriter writer = new PrintWriter(arg, "UTF-8")) {
 			writer.write(code);
 			File f = new File(arg);
@@ -248,7 +248,7 @@ public class Tests {
 	 * @return test results in JSON format
 	 */
 	public JSONObject getTestResults(final boolean checkStyleEnabled, final boolean testNGEnabled) {
-		StudentTesterMain c = new StudentTesterMain(tempDirName + "test/", tempDirName + "source/");
+		StudentTesterMain c = new StudentTesterMain(tempDirName + "/test/", tempDirName + "/source/");
 		c.enableCheckstyle(checkStyleEnabled);
 		c.enableTestNG(testNGEnabled);
 		c.outputJSON(true);
@@ -316,9 +316,9 @@ public class Tests {
 		if (tempDirName == null) {
 			throw new NullPointerException("Temp folder not found!");
 		}
-		testDir = new File(tempDirName + "test");
+		testDir = new File(tempDirName + "/test");
 		testDir.mkdir();
-		sourceDir = new File(tempDirName + "source");
+		sourceDir = new File(tempDirName + "/source");
 		sourceDir.mkdir();
 	}
 
