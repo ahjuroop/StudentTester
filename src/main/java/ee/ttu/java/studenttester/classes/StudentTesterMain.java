@@ -53,7 +53,7 @@ public final class StudentTesterMain {
 		// try to automatically get temp directory
 		this.tempRootName = System.getProperty("java.io.tmpdir");
 		if (tempRootName != null) {
-			this.tempRoot = new File(tempRootName + "/testerTemp/");
+			this.tempRoot = new File(tempRootName, "testerTemp");
 		}
 	}
 
@@ -69,7 +69,7 @@ public final class StudentTesterMain {
 		this.contentRootName = contentRootName;
 		this.tempRootName = System.getProperty("java.io.tmpdir");
 		if (tempRootName != null) {
-			this.tempRoot = new File(tempRootName + "/testerTemp/");
+			this.tempRoot = new File(tempRootName, "testerTemp");
 		}
 		this.testRoot = new File(testRootName);
 		this.contentRoot = new File(contentRootName);
